@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`timescale 10ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company              : 
 // Engineer             : 
@@ -34,6 +34,7 @@ module instr_fetch(
 );
    reg [`XLEN-1:0]              pc_reg;             // PC Register
    reg                          branch_taken_reg;   // Taken branch reg
+	reg [`XLEN-1:0]				  npc_reg;
 	
    assign pc            = pc_reg;
    assign branch_taken  = branch_taken_reg;
@@ -47,6 +48,7 @@ module instr_fetch(
       if(!rst_n) 
          begin
          pc_reg            <= 32'h0;
+			npc_reg				<= 32'h4;
          branch_taken_reg  <= 1'b0;     
          end
       else 
@@ -64,11 +66,11 @@ module instr_fetch(
                branch_taken_reg <= 1'b0; 
                end  
          end
-         else 
-            begin
-               pc_reg           <= pc_reg;
-               branch_taken_reg <= branch_taken_reg;  
-            end
+//         else 
+//            begin
+//            pc_reg           <= pc_reg;
+//            branch_taken_reg <= branch_taken_reg;  
+//            end
 			end
       end 
 			

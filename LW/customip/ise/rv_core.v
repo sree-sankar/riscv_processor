@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`timescale 10ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company              : 
 // Engineer             : 
@@ -52,17 +52,33 @@ module rv_core(
 	 wire [`SYS_REGS_WIDTH-1:0]  decode_rs2_addr;	// Decoded rs2_addr
     wire [`FUNCT3_LEN-1:0]      decode_funct3;		// Decoded Function 3
 	 wire [`FUNCT7_LEN-1:0]      decode_funct7;  	// Decoded Function 7 
-    wire [`XLEN-1:0]            decode_rs1_data;	// Decoded Operand 1
-    wire [`XLEN-1:0]            decode_rs2_data;	// Decoded Operand 2
     wire [`XLEN-1:0]            decode_imm_i_data; // Decoded Immediate I type
     wire [`XLEN-1:0]            decode_imm_s_data; // Decoded Immediate S type
     wire [`XLEN-1:0]            decode_imm_b_data; // Decoded Immediate B type
     wire [`XLEN-1:0]            decode_imm_u_data; // Decoded Immediate U type
     wire [`XLEN-1:0]            decode_imm_j_data; // Decoded Immediate J type
 	 wire [`SYS_REGS_WIDTH-1:0]  decode_rd_addr;		// Decoded destination address
-	 wire [`XLEN-1:0]            decode_csr_data;   // Decoded CRS data
 	 wire [`CSR_BASE_WIDTH-1:0]  decode_csr_addr;	// Decode Forward Address
-	 wire [`CSR_UIMM_WIDTH-1:0]  decode_uimm;			// Decoded UImm data for CSR Instruction
+	 wire [`XLEN-1:0]  			  decode_uimm;			// Decoded UImm data for CSR Instruction
+
+//-----------------------------------Operand Fetch---------------------------------//
+    wire [`XLEN-1:0]            operand_pc;  		 // Operand Fetch PC
+    wire [`OPCODE_WIDTH-1:0]    operand_opcode;  	 // Operand Fetch Opcode	 
+	 wire [`SYS_REGS_WIDTH-1:0]  operand_rs1_addr;	 // Operand Fetch rs1_addr
+	 wire [`SYS_REGS_WIDTH-1:0]  operand_rs2_addr;	 // Operand Fetch rs2_addr
+	 wire [`SYS_REGS_WIDTH-1:0]  operand_rd_addr;	 // Operand Fetch destination address
+    wire [`FUNCT3_LEN-1:0]      operand_funct3;		 // Operand Fetch Function 3
+	 wire [`FUNCT7_LEN-1:0]      operand_funct7;  	 // Operand Fetch Function 7 
+    wire [`XLEN-1:0]            operand_rs1_data;	 // Operand Fetch Operand 1
+    wire [`XLEN-1:0]            operand_rs2_data;	 // Operand Fetch Operand 2
+    wire [`XLEN-1:0]            operand_imm_i_data; // Operand Fetch Immediate I type
+    wire [`XLEN-1:0]            operand_imm_s_data; // Operand Fetch Immediate S type
+    wire [`XLEN-1:0]            operand_imm_b_data; // Operand Fetch Immediate B type
+    wire [`XLEN-1:0]            operand_imm_u_data; // Operand Fetch Immediate U type
+    wire [`XLEN-1:0]            operand_imm_j_data; // Operand Fetch Immediate J type
+	 wire [`XLEN-1:0]            operand_csr_data;   // Operand Fetch CRS data
+	 wire [`CSR_BASE_WIDTH-1:0]  operand_csr_addr;	 // Operand Fetch Forward Address
+	 wire [`XLEN-1:0]  			  operand_uimm;		 // Operand Fetch UImm data for CSR Instruction
 
 //-----------------------------------Execute---------------------------------//
     wire [`XLEN-1:0]            exec_rd_data;      // Execute Data Out
@@ -75,7 +91,7 @@ module rv_core(
 	 wire [`OPCODE_WIDTH-1:0]    exec_opcode;			// Execute Opcode
 	 wire	[`XLEN-1:0]				  exec_mem_data;		// Execute memory data
 	 wire [`XLEN-1:0]				  exec_mem_addr;		// Execute memory address 
-	 wire [`CSR_UIMM_WIDTH-1:0]  exec_uimm;			// Execute UImm data for CSR Instruction
+	 wire [`XLEN-1:0]  			  exec_uimm;			// Execute UImm data for CSR Instruction
 	 // Control Signals
 	 wire 			              exec_branch_en; 	// Execute branch en 
 //	 wire 			              exec_csr_write_en; // Execute CSR Write En
@@ -93,6 +109,7 @@ module rv_core(
 	 wire [`CSR_UIMM_WIDTH-1:0]  mem_uimm;				// Memory UImm data for CSR Instruction
 	 // Control Signals
     wire                        mem_write_en;		// Memory Write Enable 
+	 wire								  mem_read_en;
 //-----------------------------------System Reg-----------------------------//
 //    wire [`XLEN-1:0]            reg_data_in;			// Register Data In
 //    wire [`XLEN-1:0]            reg_data_out;		// Register Data Out
@@ -114,6 +131,7 @@ module rv_core(
 //----------------------- Halt Signals --------------------------------------//
     wire halt_fetch;		// Halt fetch state
     wire halt_decode;	// Halt decode state
+	 wire halt_operand;	// Halt operand state
     wire halt_exec;		// Halt execute state
     wire halt_mem;	   // Halt memory state
 	 wire halt_reg;		// Halt register state
@@ -145,10 +163,7 @@ module rv_core(
 			.halt               	(halt_decode                	),
 			.pc_in              	(pc                         	),
 			.instr              	(fetch_instr                	),
-			.rs1_data_in    		(fetch_rs1_data             	),
-			.rs2_data_in     		(fetch_rs2_data             	),
 			.rd_addr_in         	(fetch_rd_addr              	),
-			.csr_data_in			(fetch_csr_data					),
 			.csr_addr_in			(fetch_csr_addr					),
 			.opcode          		(decode_opcode              	),
 			.funct3              (decode_funct3              	),
@@ -158,24 +173,59 @@ module rv_core(
 			.imm_b_data         	(decode_imm_b_data          	),
 			.imm_u_data         	(decode_imm_u_data          	),
 			.imm_j_data         	(decode_imm_j_data          	),
-			.rs1_data_out        (decode_rs1_data            	),
-			.rs2_data_out        (decode_rs2_data            	),
 			.rs1_addr_out        (decode_rs1_addr             	),
 			.rs2_addr_out        (decode_rs2_addr             	),
 			.rd_addr_out        	(decode_rd_addr             	),
 			.pc_out				 	(decode_pc				  		   ),
 			.uimm_out				(decode_uimm						),
-			.csr_addr_out			(decode_csr_addr					),
-			.csr_data_out			(decode_csr_data					),
-			.bypass_rd_data		(exec_rd_data						),	// Bypass data
-			.bypass_rd_addr		(exec_rd_addr						)	// Bypass address
+			.csr_addr_out			(decode_csr_addr					)
     );
+
 //---------------------------------------------------------------------------//
 // Operand Fetch                                                       		  //
 //---------------------------------------------------------------------------//
-
-
-
+	operand_fetch operand_fetch_inst(
+			.clk               	(clk                        	),
+			.rst_n              	(rst_n                      	),
+			.halt               	(halt_operand                	),
+			.rs1_data_in    		(fetch_rs1_data             	),
+			.rs2_data_in     		(fetch_rs2_data             	),
+			.csr_data_in			(fetch_csr_data					),
+			.pc_in					(decode_pc							),
+			.rd_addr_in         	(decode_rd_addr              	),
+			.rs1_addr_in			(decode_rs1_addr					),
+			.rs2_addr_in			(decode_rs2_addr					),
+			.csr_addr_in			(decode_csr_addr					),
+			.opcode_in           (decode_opcode              	),
+			.funct3_in           (decode_funct3              	),
+			.funct7_in           (decode_funct7              	),
+			.imm_i_data_in       (decode_imm_i_data          	),
+			.imm_s_data_in       (decode_imm_s_data          	),
+			.imm_b_data_in       (decode_imm_b_data          	),
+			.imm_u_data_in       (decode_imm_u_data          	),
+			.imm_j_data_in       (decode_imm_j_data          	),
+			.uimm_in					(decode_uimm						),
+			.opcode_out				(operand_opcode					),
+			.funct3_out				(operand_funct3					),
+			.funct7_out				(operand_funct7					),
+			.rs1_data_out        (operand_rs1_data            	),
+			.rs2_data_out        (operand_rs2_data            	),
+			.rs1_addr_out        (operand_rs1_addr             ),
+			.rs2_addr_out        (operand_rs2_addr             ),
+			.rd_addr_out        	(operand_rd_addr             	),
+			.imm_i_data_out      (operand_imm_i_data          	),
+			.imm_s_data_out      (operand_imm_s_data          	),
+			.imm_b_data_out      (operand_imm_b_data          	),
+			.imm_u_data_out      (operand_imm_u_data          	),
+			.imm_j_data_out      (operand_imm_j_data          	),
+			.pc_out				 	(operand_pc				  		   ),
+			.uimm_out				(operand_uimm						),
+			.csr_addr_out			(operand_csr_addr					),
+			.csr_data_out			(operand_csr_data					),
+			.bypass_rd_data		(exec_rd_data						),	// Bypass data
+			.bypass_rd_addr		(exec_rd_addr						)	// Bypass address
+	);
+	
 //---------------------------------------------------------------------------//
 // Instruction Execute                                                       //
 //---------------------------------------------------------------------------//
@@ -183,23 +233,23 @@ module rv_core(
 			.clk						(clk									), 
 			.rst_n					(rst_n								), 
 			.halt						(halt_exec							), 
-			.pc_in					(decode_pc							),
-			.rs1_addr				(decode_rs1_addr					),
-			.rs2_addr				(decode_rs2_addr					),
-			.opcode_in				(decode_opcode						),			
-			.funct3_in				(decode_funct3						), 
-			.funct7_in				(decode_funct7						), 
-			.imm_i_data				(decode_imm_i_data				), 
-			.imm_s_data				(decode_imm_s_data				), 
-			.imm_b_data				(decode_imm_b_data				), 
-			.imm_u_data				(decode_imm_u_data				), 
-			.imm_j_data				(decode_imm_j_data				),
-			.csr_addr_in			(decode_csr_addr					),
-			.csr_data_in			(decode_csr_data					),
-			.rd_addr_in				(decode_rd_addr					),
-			.uimm_in					(decode_uimm						),
-			.rs1_data_in			(decode_rs1_data					), 
-			.rs2_data_in			(decode_rs2_data					), 
+			.pc_in					(operand_pc							),
+			.rs1_addr				(operand_rs1_addr					),
+			.rs2_addr				(operand_rs2_addr					),
+			.opcode_in				(operand_opcode				   ),			
+			.funct3_in				(operand_funct3					), 
+			.funct7_in				(operand_funct7					), 
+			.imm_i_data				(operand_imm_i_data				), 
+			.imm_s_data				(operand_imm_s_data				), 
+			.imm_b_data				(operand_imm_b_data				), 
+			.imm_u_data				(operand_imm_u_data				), 
+			.imm_j_data				(operand_imm_j_data				),
+			.csr_addr_in			(operand_csr_addr					),
+			.csr_data_in			(operand_csr_data					),
+			.rd_addr_in				(operand_rd_addr					),
+			.uimm_in					(operand_uimm						),
+			.rs1_data_in			(operand_rs1_data					), 
+			.rs2_data_in			(operand_rs2_data					),
 			.rd_data_out			(exec_rd_data						),
 			.rd_addr_out			(exec_rd_addr						),
 			.branch_addr			(exec_branch_addr					), 
@@ -211,18 +261,13 @@ module rv_core(
 			.mem_addr_out			(exec_mem_addr						),
 			.mem_data_out			(exec_mem_data						),
 			.uimm_out				(exec_uimm							),
-			//.taken_branch			(taken_branch						), 
 			.branch_en				(exec_branch_en					) 
-			//.csr_wr_en				(exec_csr_wr_en					), 
-			//.mem_wr_en				(exec_mem_wr_en					), 
-			//.mem_read_en			(exec_mem_rd_en					), 
-			//.reg_wr_en				(exec_reg_wr_en					)
     );
 //---------------------------------------------------------------------------//
 // Memory Access                                                             //
 //---------------------------------------------------------------------------//
 
-	 assign mem_addr 		  = exec_mem_addr;//32'h0050_0000;//; 
+	 assign mem_addr 		  = exec_mem_addr;
 	 assign mem_write_data = exec_mem_data;
 	 assign mem_data_rd_en = mem_read_en;
 	 assign mem_data_wr_en = mem_write_en;
@@ -276,14 +321,16 @@ module rv_core(
 //---------------------------------------------------------------------------//
     halt_cntrl halt_cntrl_inst(
         .clk                	(clk                    		),
-        .rst_n              	(rst_n                  		), 
-        .fetch_instr        	(fetch_instr            		),
-        .decode_instr       	(decode_opcode            		),
+        .rst_n              	(rst_n                  		),
+		  .branch_en				(exec_branch_en					),
+      //  .fetch_instr        	(fetch_instr            		),
+      //  .decode_instr       	(decode_opcode            		),
       //  .execute_instr      	(execute_instr           		),
-        .mem_opcode          	(mem_opcode           			),
-        .taken_branch       	(fetch_branch_taken     		),
+     //   .mem_opcode          	(mem_opcode           			),
+      //  .taken_branch       	(fetch_branch_taken     		),
         .halt_fetch         	(halt_fetch             		),
         .halt_decode        	(halt_decode            		),
+		  .halt_operand			(halt_operand						),
         .halt_exec          	(halt_exec              		),
         .halt_mem           	(halt_mem               		),
         .halt_reg           	(halt_reg               		)

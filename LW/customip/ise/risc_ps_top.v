@@ -137,6 +137,10 @@ assign sys_rst_n = rst_n;
 //---------------------------------------------------------------------------//
 // UART Controller
 //---------------------------------------------------------------------------//
+wire uart_tx_en;
+
+assign uart_tx_en = rst_n;
+
 uart_if uart_top_inst(
 	.clk					 (clk								),
 	.rst_n				 (rst_n							),
@@ -146,8 +150,8 @@ uart_if uart_top_inst(
 	.uart_tx_data		 (mem_wr_data					),
 	.mem_wr_en			 (mem_data_wr_en				),
 	.mem_rd_en			 (mem_data_rd_en				),
-	.uart_tx_en			 (1'b1							),
-	.uart_rx_en			 (1'b0							),
+	.uart_tx_en			 (uart_tx_en					),
+	.uart_rx_en			 (uart_en						),
 	.uart_tx				 (uart_tx						)
 	//.uart_rx				 (uart_rx						)
 );

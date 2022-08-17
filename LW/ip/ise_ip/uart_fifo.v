@@ -38,6 +38,7 @@
 
 module uart_fifo(
   clk,
+  srst,
   din,
   wr_en,
   rd_en,
@@ -47,6 +48,7 @@ module uart_fifo(
 );
 
 input clk;
+input srst;
 input [7 : 0] din;
 input wr_en;
 input rd_en;
@@ -143,7 +145,7 @@ output empty;
     .C_HAS_RD_RST(0),
     .C_HAS_RST(0),
     .C_HAS_SLAVE_CE(0),
-    .C_HAS_SRST(0),
+    .C_HAS_SRST(1),
     .C_HAS_UNDERFLOW(0),
     .C_HAS_VALID(0),
     .C_HAS_WR_ACK(0),
@@ -213,7 +215,7 @@ output empty;
     .C_USE_COMMON_OVERFLOW(0),
     .C_USE_COMMON_UNDERFLOW(0),
     .C_USE_DEFAULT_SETTINGS(0),
-    .C_USE_DOUT_RST(0),
+    .C_USE_DOUT_RST(1),
     .C_USE_ECC(0),
     .C_USE_ECC_AXIS(0),
     .C_USE_ECC_RACH(0),
@@ -249,6 +251,7 @@ output empty;
   )
   inst (
     .CLK(clk),
+    .SRST(srst),
     .DIN(din),
     .WR_EN(wr_en),
     .RD_EN(rd_en),
@@ -258,7 +261,6 @@ output empty;
     .BACKUP(),
     .BACKUP_MARKER(),
     .RST(),
-    .SRST(),
     .WR_CLK(),
     .WR_RST(),
     .RD_CLK(),

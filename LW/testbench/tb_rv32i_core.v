@@ -38,42 +38,45 @@ module tb_rv32i_core;
 //---------------------------------------------------------------------------//
 // Top level Testbench
 //---------------------------------------------------------------------------//
+`define TOP 0
+`ifdef TOP
+    // SPI Flash 
+    reg       spi_sdi;    // Serial Data In
+    wire      spi_sdo;    // Serial Data Out
+    wire      spi_sclk;   // Serial Clock,
+    wire      spi_cs;     // Chip Select
+
+    // LED
+    wire      rst_led;    // Reset LED
+
+    //UART
+    reg       uart_rx;    // UART RX
+    wire      uart_tx;    // UART TX
+
+    //GPIO
+    wire      gpio_led;    // GPIO LED
+	 
+riscv_ps_top uut(
+	 .clk			(clk				),      
+    .rst_n		(rst_n			), 
+
 //    // SPI Flash 
-//    reg       spi_sdi;    // Serial Data In
-//    wire      spi_sdo;    // Serial Data Out
-//    wire      spi_sclk;   // Serial Clock,
-//    wire      spi_cs;     // Chip Select
-//
+//    .spi_sdi	(spi_sdi			),
+//    .spi_sdo	(spi_sdo			),
+//    .spi_sclk	(spi_sclk		),
+//    .spi_cs		(spi_cs			),
+//	 
 //    // LED
-//    wire      rst_led;    // Reset LED
+//    .rst_led	(rst_led			),    // Reset LED
 //
-//    //UART
-//    reg       uart_rx;    // UART RX
-//    wire      uart_tx;    // UART TX
+    //UART
+//    .uart_rx	(uart_rx			),    // UART RX
+    .uart_tx	(uart_tx			)    // UART TX
 //
 //    //GPIO
-//    wire      gpio_led;    // GPIO LED
-//	 
-//riscv_ps_top uut(
-//	 .clk			(clk				),      
-//    .rst_n		(rst_n			), 
-//
-////    // SPI Flash 
-////    .spi_sdi	(spi_sdi			),
-////    .spi_sdo	(spi_sdo			),
-////    .spi_sclk	(spi_sclk		),
-////    .spi_cs		(spi_cs			),
-////	 
-////    // LED
-////    .rst_led	(rst_led			),    // Reset LED
-////
-//    //UART
-////    .uart_rx	(uart_rx			),    // UART RX
-//    .uart_tx	(uart_tx			)    // UART TX
-////
-////    //GPIO
-////    .gpio_led  (gpio_led		)
-//);  
+//    .gpio_led  (gpio_led		)
+);  
+`else 
 //---------------------------------------------------------------------------//
 // Core level Testbench
 ////---------------------------------------------------------------------------//
@@ -108,64 +111,75 @@ module tb_rv32i_core;
 //	// Print Hello World! Assembly Code
 //		
 //		// Generate Address
-		#15 instr <= 32'b0000000_00000_00000_000_00000_0110011;//nop instr
-		#10 instr <= 32'b0000_0001_0100_00000_000_00011_0010011; // addi r3 r0 0x14		// 5<<20 = UART ADDR0 32'h0050_0000
-		#10 instr <= 32'b0000_0000_0101_00000_000_00100_0010011; // addi r4 r0 0x5			
-		#10 instr <= 32'b0000000_00011_00100_001_00101_0110011;	// sll r5 r4 r3		// 5<<20 // Generate load address 
+		#15 instr <= 32'b0000000_00000_00000_000_00000_0110011;	// 0x00 nop instr 
+		#10 instr <= 32'b0000_0001_0100_00000_000_00011_0010011; // 0x04 addi r3 r0 0x14		// 5<<20 = UART ADDR0 32'h0050_0000
+		#10 instr <= 32'b0000_0000_0101_00000_000_00100_0010011; // 0x08 addi r4 r0 0x5			
+		#10 instr <= 32'b0000000_00011_00100_001_00101_0110011;	// 0x0C sll r5 r4 r3		// 5<<20 // Generate load address 
 //		
 //		// Send H
-			#10 instr <= 32'b0000_0100_1000_00000_000_00010_0010011;	// addi r2 r0 0x48 	// H ASCII -> 0x47
+			#10 instr <= 32'b0000_0100_1000_00000_000_00010_0010011;	// 0x10 addi r2 r0 0x48 	// H ASCII -> 0x47
 			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;	// sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-			#10 instr <= 32'b0000000_00000_00000_000_00000_0110011;
-			#10 instr <= 32'b0000000_00000_00000_000_00000_0110011;
-			#10 instr <= 32'b0000000_00000_00000_000_00000_0110011;
-			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;
-//		// Send e
-//			#10 instr <= 32'b0000_0110_0101_00000_000_00010_0010011; // addi r2 r0 0x65 	// e-> 0x65
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//
-//		// Send l and l
-//			#10 instr <= 32'b0000_0110_1100_00000_000_00010_0010011; // addi r2 r0 0x6C 	// l-> 0x6C
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;// sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;// sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send o
-//			#10 instr <= 32'b0000_0110_1111_00000_000_00010_0010011; // addi r2 r0 0x6F 	// o-> 0x6F
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send Space
-//			#10 instr <= 32'b0000_0010_0000_00000_000_00010_0010011;	// addi r2 r0 0x20 // Space -> 
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send W
-//			#10 instr <= 32'b0000_0101_0111_00000_000_00010_0010011; // addi r2 r0 0x57 // W 
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send o
-//			#10 instr <= 32'b0000_0110_1111_00000_000_00010_0010011; // addi r2 r0 0x6F // o
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send r
-//			#10 instr <= 32'b0000_0111_0010_00000_000_00010_0010011; // addi r2 r0 0x72 // r
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send l
-//			#10 instr <= 32'b0000_0110_1100_00000_000_00010_0010011; // addi r2 r0 0x6C // l
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send d
-//			#10 instr <= 32'b0000_0110_0100_00000_000_00010_0010011; // addi r2 r0 0x64 // d
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
-//		
-//		// Send !
-//			#10 instr <= 32'b0000_0010_0001_00000_000_00010_0010011; // addi r2 r0 0x21 // !
-//			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		// Send e
+			#10 instr <= 32'b0000_0110_0101_00000_000_00010_0010011; // addi r2 r0 0x65 	// e-> 0x65
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+
+		// Send l and l
+			#10 instr <= 32'b0000_0110_1100_00000_000_00010_0010011; // addi r2 r0 0x6C 	// l-> 0x6C
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;// sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;// sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send o
+			#10 instr <= 32'b0000_0110_1111_00000_000_00010_0010011; // addi r2 r0 0x6F 	// o-> 0x6F
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send Space
+			#10 instr <= 32'b0000_0010_0000_00000_000_00010_0010011;	// addi r2 r0 0x20 // Space -> 
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send W
+			#10 instr <= 32'b0000_0101_0111_00000_000_00010_0010011; // addi r2 r0 0x57 // W 
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send o
+			#10 instr <= 32'b0000_0110_1111_00000_000_00010_0010011; // addi r2 r0 0x6F // o
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send r
+			#10 instr <= 32'b0000_0111_0010_00000_000_00010_0010011; // addi r2 r0 0x72 // r
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send l
+			#10 instr <= 32'b0000_0110_1100_00000_000_00010_0010011; // addi r2 r0 0x6C // l
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send d
+			#10 instr <= 32'b0000_0110_0100_00000_000_00010_0010011; // addi r2 r0 0x64 // d
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send !
+			#10 instr <= 32'b0000_0010_0001_00000_000_00010_0010011; // addi r2 r0 0x21 // !
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send new line
+			#10 instr <= 32'b0000_0000_1010_00000_000_00010_0010011; // addi r2 r0 0x0A // !
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+		
+		// Send carriage return
+			#10 instr <= 32'b0000_0000_1101_00000_000_00010_0010011; // addi r2 r0 0x0D // !
+			#10 instr <= 32'b0000000_00010_00101_000_00000_0100011;  // sb r2, (0x0) r5  // Load value from r2 to (r5_data + 0x0)
+			
+		// Branch to 0x10
+		#10 instr <= 32'b0000_0001_0000_00000_000_00000_1101111; // Jump to 0x10
+		#10 instr <= 32'b0000000_00000_00000_000_00000_0110011; //nop
+		#10 instr <= 32'b0000000_00000_00000_000_00000_0110011; //nop
+		#10 instr <= 32'b0000000_00000_00000_000_00000_0110011; // nop
+		
 		#10 for(i = 0; i<= 1000; i= i+1)
 			begin
 			instr <= 32'bx;//instr <= 32'b0000000_00000_00000_000_00000_0110011;
 			end
 	end
-
+`endif
 //---------------------------------------------------------------------------//
 // Fetch State Testbench
 //---------------------------------------------------------------------------//
@@ -196,19 +210,5 @@ module tb_rv32i_core;
 //		//#50 halt_fetch <= 1;
 //		#100 branch_en <= 1; branch_addr<= 32'hA0A0_A0A0;
 //		end
-		
-
-//---------------------------------------------------------------------------//
-// Decode State Testbench
-//---------------------------------------------------------------------------//
-
-
-
-
-
-
-	
-
-      
 endmodule
 

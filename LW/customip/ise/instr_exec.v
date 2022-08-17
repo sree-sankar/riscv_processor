@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`timescale 10ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company              : 
 // Engineer             :  
@@ -36,7 +36,7 @@ module instr_exec(
 	input [`XLEN-1:0]   	        imm_j_data,     // J type immediate data
 	input [`CSR_BASE_WIDTH-1:0]  csr_addr_in,    // CSR address
    input [`XLEN-1:0]            csr_data_in,    // CSR Data In
-	input [`CSR_UIMM_WIDTH-1:0]  uimm_in,			// UIMM data of CSR
+	input [`XLEN-1:0]  			  uimm_in,			// UIMM data of CSR
    input signed [`XLEN-1:0]     rs1_data_in,    // Operand 1 In
    input signed [`XLEN-1:0]     rs2_data_in,    // Operand 2 In
 	
@@ -50,15 +50,11 @@ module instr_exec(
    output [`OPCODE_WIDTH-1:0]   opcode_out,     // Opcode Code
 	output [`XLEN-1:0]			  mem_addr_out,	// Address of memory to be read
 	output [`XLEN-1:0]			  mem_data_out,	// Address of memory to be read
-	output [`CSR_UIMM_WIDTH-1:0] uimm_out,			// UImm Output
+	output [`XLEN-1:0] 			  uimm_out,			// UImm Output
     // Control Signals
-    input                       halt,           // Halt control 
-//    input                       taken_branch, // Taken branch signal
-    output                      branch_en,      // Branch enable
-    output                      csr_wr_en,      // CSR Write Enable
-    output                      mem_wr_en,      // Memory Write Enable
-    output                      mem_read_en,         // Memory Read Enable
-    output                      reg_wr_en       // Register Write Enable
+   input                       halt,           // Halt control 
+   output                      branch_en       // Branch enable
+
 ) ;
     
     // Register
@@ -72,17 +68,13 @@ module instr_exec(
     reg [`XLEN-1:0]             mem_addr_reg;     // Memory address register
 	 reg [`XLEN-1:0]				  mem_data_reg;	  // Memory Data register
 	 reg [`SYS_REGS_WIDTH-1:0]	  rd_addr_reg;      // Destination address register
-    reg [`CSR_UIMM_WIDTH-1:0]	  uimm_reg;
+    reg [`XLEN-1:0]	  			  uimm_reg;
+	 reg [`XLEN-1:0]				  pc_reg;
 	 
 	 wire [`XLEN-1:0]				  rs1_data;				// rs1 data input for processing including bypass
 	 wire [`XLEN-1:0]				  rs2_data;				// rs2 data in
 	 // Control Signal
-    reg 								  branch_en_reg;	 // Branch enable register  		 
-    reg 								  mem_wr_en_reg;
-    reg 								  mem_en_reg;
-    reg 								  csr_wr_en_reg;
-    reg 							     reg_wr_en_reg;
-	 
+    reg 								  branch_en_reg;	 	// Branch enable register
 
     assign funct3_out    = funct3_reg;
     assign funct7_out    = funct7_reg;
@@ -96,11 +88,6 @@ module instr_exec(
     assign branch_en     = branch_en_reg;
 	 assign rd_addr_out	 = rd_addr_reg;
 	 assign uimm_out		 = uimm_reg;
-    // To be removed is not needed
-	 assign reg_wr_en     = reg_wr_en_reg;
-    assign mem_wr_en     = mem_wr_en_reg;
-    assign mem_en     	 = mem_en_reg;
-    assign csr_wr_en     = csr_wr_en_reg;
     
 	 assign rs1_data = (bypass_rs1_stage0) ? bypass_data_stage0 : 
 					       (bypass_rs1_stage1) ? bypass_data_stage1 : rs1_data_in;
@@ -118,6 +105,7 @@ module instr_exec(
 				rd_addr_reg	 <= 32'h0000_0000;
 				csr_addr_reg <= 32'h0000_0000;
 				uimm_reg		 <= `CSR_UIMM_WIDTH'h0; 
+				pc_reg		 <= `XLEN'h0;
             end
         else 
             begin
@@ -127,6 +115,7 @@ module instr_exec(
 				rd_addr_reg	 <= rd_addr_in;
 				csr_addr_reg <= csr_addr_in;
 				uimm_reg		 <= uimm_in;
+				pc_reg		 <= pc_in;
             end
         end
 
@@ -208,7 +197,7 @@ module instr_exec(
                 //------------------------------------BRANCH----------------------------------------//
                 `BRANCH : 
                     begin
-						  rd_data_reg 	 <= 32'h0000_0000;
+						  rd_data_reg 	 	 <= 32'h0000_0000;
                     mem_addr_reg     <= 32'h0000_0000;
 						  mem_data_reg	 	 <= 32'h0000_0000;
 						  csr_data_out_reg <= `XLEN'b0000_0000;
@@ -221,7 +210,7 @@ module instr_exec(
                     `FN3_BGEU : branch_addr_reg  <= ($unsigned(rs1_data) > $unsigned(rs2_data)) ? {pc_in + imm_b_data} : 32'h0; 
                     default :
                         begin
-                        rd_data_reg   	<= 32'h0000_0000;
+                        rd_data_reg   		<= 32'h0000_0000;
                         branch_addr_reg 	<= 32'h0000_0000;
                         mem_addr_reg    	<= 32'h0000_0000;
 								mem_data_reg	 	<= 32'h0000_0000;
@@ -232,7 +221,7 @@ module instr_exec(
                 //---------------------------------------LUI-----------------------------------------//
                 `LUI :  
                     begin 
-                    rd_data_reg 	  <= imm_u_data;
+                    rd_data_reg 	  	  <= imm_u_data;
 						  branch_addr_reg   <= 32'h0000_0000;
                     mem_addr_reg      <= 32'h0000_0000;
 						  mem_data_reg	 	  <= 32'h0000_0000;
@@ -241,7 +230,7 @@ module instr_exec(
                 //--------------------------------------AUIPC---------------------------------------//
                 `AUIPC :  
                     begin 
-                    rd_data_reg     <=  pc_in + imm_u_data;
+                    rd_data_reg       <= pc_reg + imm_u_data;
                     branch_addr_reg   <= 32'h0000_0000;
                     mem_addr_reg      <= 32'h0000_0000;
 						  mem_data_reg	 	  <= 32'h0000_0000;
@@ -250,8 +239,8 @@ module instr_exec(
                 //---------------------------------------JAL---------------------------------------//
                 `JAL : 
                     begin
-                    rd_data_reg     <= pc_in + `PC_INC;
-                    branch_addr_reg   <= pc_in + imm_j_data;
+                    rd_data_reg       <= pc_reg + `PC_INC;
+                    branch_addr_reg   <= imm_j_data; // Temporary solution -PCINC
 						  mem_addr_reg      <= 32'h0000_0000;
 						  mem_data_reg	 	  <= 32'h0000_0000;	
 						  csr_data_out_reg  <= `XLEN'b0000_0000;						  
@@ -259,7 +248,7 @@ module instr_exec(
                 //--------------------------------------JALR--------------------------------------//
                 `JALR  :
                     begin
-                    rd_data_reg     <= pc_in + `PC_INC;
+                    rd_data_reg       <= pc_reg + `PC_INC;
                     branch_addr_reg   <= (funct3_in == 3'b0) ? ((rs1_data + imm_i_data) & 32'hFFFF_FFFE) : 32'b0;
 						  mem_addr_reg		  <= 32'h0000_0000;
 						  mem_data_reg	 	  <= 32'h0000_0000;
@@ -281,7 +270,7 @@ module instr_exec(
                     `FN3_LHU  : mem_addr_reg  <= rs1_data + imm_i_data;
 						  default :
                         begin
-                        rd_data_reg   	<= 32'h0000_0000;
+                        rd_data_reg   		<= 32'h0000_0000;
                         branch_addr_reg 	<= 32'h0000_0000;
                         mem_addr_reg    	<= 32'h0000_0000;
 								mem_data_reg	 	<= 32'h0000_0000;
@@ -417,10 +406,6 @@ module instr_exec(
         begin
         if(!rst_n)
             begin
-            reg_wr_en_reg <= 1'b0;
-            mem_wr_en_reg <= 1'b0;
-            mem_en_reg 	  <= 1'b0;
-            csr_wr_en_reg <= 1'b0;
             branch_en_reg <= 1'b0;
             end
         else 
@@ -428,94 +413,10 @@ module instr_exec(
 				if(!halt)
 					begin
 					case(opcode_in)
-					`OP : 
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b1;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg 	<= 1'b0;
-						 end
-					`OP_IMM :
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b1;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end
-					`BRANCH :
-						 begin
-						 branch_en_reg <= 1'b1;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end
-					`LUI :                
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b1;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end 
-					`AUIPC :
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b1;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end   
-					`JAL : 
-						 begin
-						 branch_en_reg <= (funct3_in == 3'b0) ? 1'b1 : 1'b0;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end
-					`JALR : 
-						 begin
-						 branch_en_reg <= 1'b1;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end
-					`LOAD :                 
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end
-					`STORE :
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg 	<= 1'b0;
-						 end
-					`SYSTEM :
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg 	<= 1'b0;
-						 end
-					default :
-						 begin
-						 branch_en_reg <= 1'b0;
-						 reg_wr_en_reg <= 1'b0;
-						 csr_wr_en_reg <= 1'b0;
-						 mem_wr_en_reg <= 1'b0;
-						 mem_en_reg <= 1'b0;
-						 end
+						`BRANCH : branch_en_reg <= 1'b1;
+						`JAL 	  : branch_en_reg <= 1'b1;
+						`JALR   : branch_en_reg <= 1'b1;
+						default : branch_en_reg <= 1'b0;
 					endcase
 					end
 				else 

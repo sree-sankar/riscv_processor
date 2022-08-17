@@ -56,21 +56,21 @@ module uart_if(
 //	wire					rx_fifo_empty;
 //	wire [7:0]			rx_fifo_din;
 //	wire [7:0]			rx_fifo_dout;
-	
+	wire					 fifo_rst;
 	wire					 tx;
 	wire					 tck;
 	wire [DIVISOR-1:0] q;
 	wire 					 tx_done_tck;
 	wire 					 tx_start;
 	
-	assign uart_tx	= (rst_n) ? tx : 1'b1;//(tx_end) ? 1'b1 : tx;
+	assign fifo_rst = ~rst_n;
+	assign uart_tx	= (uart_tx_en) ? tx : 1'b1;//(tx_end) ? 1'b1 : tx;
 	
 	// UART TX
 	assign tx_fifo_din	= uart_tx_data[7:0];
 	assign tx_fifo_wr_en = uart_en & mem_wr_en;
-	assign tx_fifo_rd_en = tx_done_tck; //| ~tx_fifo_empty & uart_tx_en;
-	
-	assign tx_start = ~tx_fifo_empty & ~tx_fifo_empty & uart_tx_en;
+	assign tx_fifo_rd_en = rst_n & tx_done_tck & ~tx_fifo_empty; //| ~tx_fifo_empty & uart_tx_en;
+	assign tx_start 		= ~tx_fifo_empty & uart_tx_en;
 	// Baud Gen
 	mod_m_counter #(
 						.M	(DIVISOR	),
@@ -135,6 +135,7 @@ module uart_if(
 
 	uart_fifo tx_fifo (
 	  .clk	(clk					), // input clk
+	  .srst	(fifo_rst			), // input srst
 	  .din	(tx_fifo_din		), // input [7 : 0] din
 	  .wr_en	(tx_fifo_wr_en		), // input wr_en
 	  .rd_en	(tx_done_tck		), // input rd_en
