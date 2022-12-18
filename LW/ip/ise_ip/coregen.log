@@ -1,0 +1,49 @@
+INFO:sim:172 - Generating IP...
+Applying current project options...
+Finished applying current project options.
+WARNING:sim - A core named 'clock_gen' already exists in the project. Output
+   products for this core may be overwritten.
+Resolving generics for 'clock_gen'...
+WARNING:sim - A core named 'clock_gen' already exists in the project. Output
+   products for this core may be overwritten.
+Applying external generics to 'clock_gen'...
+Delivering associated files for 'clock_gen'...
+WARNING:sim - Component clk_wiz_v3_6 does not have a valid model name for
+   Verilog synthesis
+Delivering EJava files for 'clock_gen'...
+Delivered 3 files into directory
+D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen
+Delivered 1 file into directory
+D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen
+Generating ASY schematic symbol...
+Loading device for application Rf_Device from file '6slx9.nph' in environment
+D:\InstalledFiles\Xilinx\ISE\14.7\ISE_DS\ISE\.
+INFO:sim:949 - Finished generation of ASY schematic symbol.
+Generating SYM schematic symbol for 'clock_gen'...
+Generating ISE project...
+XCO file found: clock_gen.xco
+XMDF file found: clock_gen_xmdf.tcl
+Adding D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen.asy -view all
+-origin_type imported
+Adding D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen.ucf -view all
+-origin_type created
+Adding D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen.v -view all
+-origin_type created
+INFO:HDLCompiler:1845 - Analyzing Verilog file
+   "D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen.v" into library
+   work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding D:/Development/RISC_V_32I/LW/ip/ise_ip/tmp/_cg/clock_gen.veo -view all
+-origin_type imported
+INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
+   Please set the new top explicitly by running the "project set top" command.
+   To re-calculate the new top automatically, set the "Auto Implementation Top"
+   property to true.
+Top level has been set to "/clock_gen"
+Generating README file...
+Generating FLIST file...
+INFO:sim:948 - Finished FLIST file generation.
+Launching README viewer...
+Moving files to output directory...
+Finished moving files to output directory
+Wrote CGP file for project 'clock_gen'.

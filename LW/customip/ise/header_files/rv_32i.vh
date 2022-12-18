@@ -1,21 +1,21 @@
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
+// Company:
+// Engineer:
+//
 // Create Date: 15.11.2020 12:07:34
-// Design Name: 
+// Design Name:
 // Module Name: define
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//
 //////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -30,20 +30,20 @@
 `define PRIV_RSVD_ENCODING         2'b10
 `define PRIV_MACHINE_ENCODING      2'b11
 //-----------------Privilege Levels ENCODEING---------------------------//
-`define RV32     1 // 32 bit architecture  
+`define RV32     1 // 32 bit architecture
 //`define ARCH_64     1 // 32 bit architecture
 //`define ARCH_128     1 // 32 bit architecture
 //-----------------Function 3 [14:12]---------------------------//
-`define PC_INC			  4
-`define XLEN          32
-`define MXLEN         32
-`define ADDR_LEN    1024
-`define ADDR_BUS       5
-`define FUNCT3_LEN     3
-`define FUNCT7_LEN     7
-`define FUNCT12_LEN   12
-`define OPCODE_WIDTH   8
-`define CSR_UIMM_WIDTH 5
+`define PC_INC              4
+`define XLEN               32
+`define MXLEN              32
+`define ADDR_LEN         1024
+`define ADDR_BUS            5
+`define FUNCT3_LEN          3
+`define FUNCT7_LEN          7
+`define FUNCT12_LEN        12
+`define OPCODE_WIDTH        8
+`define CSR_UIMM_WIDTH      5
 //`define CACHE_DEPTH 250000
 //-----------------PC---------------------------//
 //`define L1_CACHE 1
@@ -75,17 +75,17 @@
 `define FN3_OR         3'b110 //OR
 `define FN3_AND        3'b111 //AND
 //Immediate
-`define FN3_ADDI       3'b000 //ADD 
-`define FN3_SLTI       3'b010 //Compare 
-`define FN3_SLTIU      3'b011 //Compare Signed 
-`define FN3_XORI       3'b100 //XOR 
-`define FN3_ORI        3'b110 //OR 
-`define FN3_ANDI       3'b111 //AND 
+`define FN3_ADDI       3'b000 //ADD
+`define FN3_SLTI       3'b010 //Compare
+`define FN3_SLTIU      3'b011 //Compare Signed
+`define FN3_XORI       3'b100 //XOR
+`define FN3_ORI        3'b110 //OR
+`define FN3_ANDI       3'b111 //AND
 `define FN3_SLLI       3'b001 //Shift Left Logic
 `define FN3_SRLI       3'b101 //Shift Right Logic
 `define FN3_SRAI       3'b101 //Shift Right Arithmetic
 //Branch
-`define FN3_BEQ        3'b000 //Branch if Equal 
+`define FN3_BEQ        3'b000 //Branch if Equal
 `define FN3_BNE        3'b001 //Branch if Not Equal
 `define FN3_BLT        3'b100 //Branch if less than
 `define FN3_BGE        3'b101 //Branch if greater than
@@ -107,9 +107,9 @@
 `define FN3_FENCE      3'b000 //
 `define FN3_FENCEI     3'b001 //
 //SYSTEM
-`define PRIV           3'b000 // 
-`define CSRRW          3'b001 // 
-`define CSRRS          3'b010 // 
+`define PRIV           3'b000 //
+`define CSRRW          3'b001 //
+`define CSRRS          3'b010 //
 `define CSRRC          3'b011 //
 `define CSRRWI         3'b101 //
 `define CSRRSI         3'b110 //
@@ -122,7 +122,7 @@
 `define ECALL      12'b0000_0000_0000 // Make serivce request to the execution environment
 `define EBREAK     12'b0000_0000_0001 // Return control to debugging environment
 `define MRET       12'b0011_0000_0010 // Return from Trap
-`define WFI        12'b0001_0000_0101 // 
+`define WFI        12'b0001_0000_0101 //
 //------------------Exception & Interrupt handler-------------------//
 `define MVECT_BASE 30'b00_0000_0000_0000_0000_0000_0000_0000;
 //------------------Interrupt Cause---------------------------------//
@@ -158,12 +158,12 @@
 `define SU_ENV_CALL         32'h0000_0009   // Environment call from S-mode
 `define RESERVED7           32'h0000_000A   // Reserved
 `define M_ENV_CALL          32'h0000_000B   // Environment call from M-mode
-`define INSTR_PG_FAULT      32'h0000_000C   // Instruction page fault 
-`define LD_PG_FAULT         32'h0000_000D   // Load page fault 
-`define RESERVED8           32'h0000_000E   // Reserved for future standard use 
-`define STR_AMO_PG_FAULT    32'h0000_000F   // Store/AMO page fault 
+`define INSTR_PG_FAULT      32'h0000_000C   // Instruction page fault
+`define LD_PG_FAULT         32'h0000_000D   // Load page fault
+`define RESERVED8           32'h0000_000E   // Reserved for future standard use
+`define STR_AMO_PG_FAULT    32'h0000_000F   // Store/AMO page fault
 `define RESERVED9           32'h0000_0010   // Reserved for future standard use
 `define RESERVED_CUST_1     32'h0000_0018   // Reserved for custom use
-`define RESERVED10           32'h0000_0020   // Reserved for future standard use
-`define RESERVED_CUST_2     32'h0000_0030   // Reserved for custom use 
+`define RESERVED10          32'h0000_0020   // Reserved for future standard use
+`define RESERVED_CUST_2     32'h0000_0030   // Reserved for custom use
 `define RESERVED11          32'h0000_0040   // Reserved for future standard use
