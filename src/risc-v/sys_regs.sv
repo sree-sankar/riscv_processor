@@ -1,6 +1,6 @@
 //----------------------+-------------------------------------------------------
 // Filename             | sys_regs.sv
-// File created on      |  14/06/2022 12:48:12
+// File created on      | 14/06/2022 12:48:12
 // Created by           | Sree Sankar E
 //                      |
 //                      |
@@ -75,8 +75,8 @@ module sys_regs(
             begin
             x0  <= `DEF_SYS_REG;
             x1  <= `DEF_SYS_REG;
-            x2  <= 'h0000_0A00;//`DEF_SYS_REG;
-            x3  <= 'h70AA_A081;//`DEF_SYS_REG;
+            x2  <= `DEF_SYS_REG;
+            x3  <= `DEF_SYS_REG;
             x4  <= `DEF_SYS_REG;
             x5  <= `DEF_SYS_REG;
             x6  <= `DEF_SYS_REG;

@@ -104,11 +104,13 @@ module tb_riscv();
         // Data Forwarding
         // #10 instr_i <= {`FN7_F0,`X3,`X2,`FN3_ADD_SUB,`X1,`OP}; // ADD
         // #10 instr_i <= 'h0;
+        // #10 instr_i <= 'h0;
+        // // #10 instr_i <= 'h0;
         // #10 instr_i <= {`FN7_F0,`X1,`X0,`FN3_ADD_SUB,`X4,`OP}; // ADD
 
         // Memory Forwarding
-        // #10 instr_i <= {7'h0,`X3,`X2,`FN3_SW,5'h0,`STORE};
-        // #10 instr_i <= {12'h0,`X2,`FN3_LHU,`X5,`LOAD};
+        #10 instr_i <= {7'h0,`X3,`X2,`FN3_SW,5'h0,`STORE};
+        #10 instr_i <= {12'h0,`X2,`FN3_LHU,`X5,`LOAD};
 
         // Hello World! Assembly ASCII
 

@@ -9,7 +9,9 @@
 //
 //------------------------------------------------------------------------------
 // Central Interconnect
-// TBD Clock Domain clock to Core, APB and Memory Clock
+// TBD
+//    -- Clock Domain clock to Core, APB and Memory Clock
+//    -- Buffering to handle throughput
 //------------------------------------------------------------------------------
 
 `include "../risc-v/riscv.vh"
@@ -55,8 +57,8 @@ module mem2apb_bridge(
 
     logic [1:0]    dev_sel;
 
-    assign dev_sel = (mem_addr_i >= `OCM_BASE_ADDR && mem_addr_i <= (`OCM_BASE_ADDR + `OCM_OFFSET)      ) ? OCM_SEL  :
-                     (mem_addr_i >= `UART0_BASE_ADDR && mem_addr_i <= (`UART0_BASE_ADDR + `UART0_OFFSET)) ? UART_SEL : 'h0;
+    assign dev_sel = ((mem_addr_i >= `OCM_BASE_ADDR) && mem_addr_i <= (`OCM_BASE_ADDR + `OCM_OFFSET)      ) ? OCM_SEL  :
+                     ((mem_addr_i >= `UART0_BASE_ADDR) && mem_addr_i <= (`UART0_BASE_ADDR + `UART0_OFFSET)) ? UART_SEL : 'h0;
 
 //------------------------------------------------------------------------------
 // Muxing

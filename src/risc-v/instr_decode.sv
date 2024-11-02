@@ -175,33 +175,43 @@ module instr_decode(
 // Execute stage to register write takes 2 cycles
 //------------------------------------------------------------------------------
 
-    logic                forward_en       ;
-    logic [      1:0]    forward_rs1      ;
-    logic [      1:0]    forward_rs2      ;
-    logic [`XLEN-1:0]    forward_rd_addr_d;
-    logic [`XLEN-1:0]    forward_rd_data_d;
+    logic                forward_en          ;
+    logic [      2:0]    forward_rs1         ;
+    logic [      2:0]    forward_rs2         ;
+    logic [`XLEN-1:0]    forward_rd_addr[0:1];
+    logic [`XLEN-1:0]    forward_rd_data[0:1];
 
     always_ff @(posedge clk_i)
         begin
         if(!resetn_i)
             begin
-            forward_en        <= 'h0;
-            forward_rd_addr_d <= 'h0;
-            forward_rd_data_d <= 'h0;
+            forward_en         <= 'h0;
+            forward_rd_addr[0] <= 'h0;
+            forward_rd_data[0] <= 'h0;
+            forward_rd_addr[1] <= 'h0;
+            forward_rd_data[1] <= 'h0;
             end
         else
             begin
-            forward_en        <= decode_enable    ;
-            forward_rd_addr_d <= forward_rd_addr_i;
-            forward_rd_data_d <= forward_rd_data_i;
+            forward_en         <= decode_enable     ;
+            forward_rd_addr[0] <= forward_rd_addr_i ;
+            forward_rd_data[0] <= forward_rd_data_i ;
+            forward_rd_addr[1] <= forward_rd_addr[0];
+            forward_rd_data[1] <= forward_rd_data[0];
             end
         end
 
+    // rd Execute Stage Forwarding
     assign forward_rs1[0] = (forward_rd_addr_i == rs1_addr_reg) ? forward_en : 1'b0;
     assign forward_rs2[0] = (forward_rd_addr_i == rs2_addr_reg) ? forward_en : 1'b0;
 
-    assign forward_rs1[1] = (forward_rd_addr_d == rs1_addr_reg) ? forward_en : 1'b0;
-    assign forward_rs2[1] = (forward_rd_addr_d == rs2_addr_reg) ? forward_en : 1'b0;
+    // rd Memory Stage Forwarding
+    assign forward_rs1[1] = (forward_rd_addr[0] == rs1_addr_reg) ? forward_en : 1'b0;
+    assign forward_rs2[1] = (forward_rd_addr[0] == rs2_addr_reg) ? forward_en : 1'b0;
+
+    // rd Reg Write Stage Forwarding
+    assign forward_rs1[2] = (forward_rd_addr[1] == rs1_addr_reg) ? forward_en : 1'b0;
+    assign forward_rs2[2] = (forward_rd_addr[1] == rs2_addr_reg) ? forward_en : 1'b0;
 
 //------------------------------------------------------------------------------
 // Output
@@ -220,9 +230,11 @@ module instr_decode(
     assign rs1_addr_o   = decode_enable ? rs1_addr       : 'h0;
     assign rs2_addr_o   = decode_enable ? rs2_addr       : 'h0;
     assign rs_read_en_o = decode_enable;
-    assign rs1_data_o   = forward_rs1[0] ? forward_rd_data_i :
-                          forward_rs1[1] ? forward_rd_data_d : rs1_data_i;
-    assign rs2_data_o   = forward_rs2[0] ? forward_rd_data_i :
-                          forward_rs2[1] ? forward_rd_data_d : rs2_data_i;
+    assign rs1_data_o   = forward_rs1[0] ? forward_rd_data_i  :
+                          forward_rs1[1] ? forward_rd_data[0] :
+                          forward_rs1[2] ? forward_rd_data[1] : rs1_data_i;
+    assign rs2_data_o   = forward_rs2[0] ? forward_rd_data_i  :
+                          forward_rs2[1] ? forward_rd_data[0] :
+                          forward_rs2[2] ? forward_rd_data[1] : rs2_data_i;
 
 endmodule
