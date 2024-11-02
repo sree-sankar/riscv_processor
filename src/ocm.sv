@@ -45,11 +45,11 @@ module ocm(
 //------------------------------------------------------------------------------
 
     dcache dcache_inst(
-        .clka     (dcache_clk_i       ),
-        .wea      (dcache_write_en_i  ),
-        .addra    (dcache_addr_i      ),
-        .dina     (dcache_write_data_i),
-        .douta    (dcache_read_data_o )
+        .clka     (dcache_clk_i            ),
+        .wea      (dcache_write_en_i       ),
+        .addra    (dcache_addr_i[`XLEN-1:2]),
+        .dina     (dcache_write_data_i     ),
+        .douta    (dcache_read_data_o      )
     );
 
 endmodule
