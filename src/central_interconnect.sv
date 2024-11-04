@@ -15,6 +15,9 @@
 `include "../apb/apb.vh"
 
 module central_interconnect(
+    // Core Clock and Reset
+    input                       core_clk_i         ,
+    input                       core_resetn_i      ,
     // Core Data Memory Interface
     input  [      `XLEN-1:0]    mem_addr_i         , // Memory Address
     input                       mem_read_en_i      , // Memory Read Enable
@@ -54,6 +57,8 @@ module central_interconnect(
 //------------------------------------------------------------------------------
 
     mem2apb_bridge mem2apb_bridge_inst(
+        .core_clk_i               (core_clk_i         ),
+        .core_resetn_i            (core_resetn_i      ),
         .m_apb_pclk_i             (m_apb_pclk_i       ),
         .m_apb_presetn_i          (m_apb_presetn_i    ),
         .mem_addr_i               (mem_addr_i         ),

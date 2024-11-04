@@ -105,6 +105,8 @@ module top(
     logic [    `APB_DW-1:0]    apb_rdata  ; // APB Read data
 
     central_interconnect central_interconnect_inst(
+        .core_clk_i          (core_clk           ),
+        .core_resetn_i       (sys_resetn         ),
         .mem_addr_i          (mem_addr           ),
         .mem_read_en_i       (mem_read_en        ),
         .mem_read_data_o     (mem_read_data      ),

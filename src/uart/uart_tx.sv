@@ -25,10 +25,10 @@ module uart_tx(
 //------------------------------------------------------------------------------
 
     enum logic [3:0] {
-        S_TX_IDLE  = 'h1,
-        S_TX_START = 'h2,
-        S_TX_DATA  = 'h4,
-        S_TX_STOP  = 'h8
+        TX_IDLE  = 'h1,
+        TX_START = 'h2,
+        TX_DATA  = 'h4,
+        TX_STOP  = 'h8
     } tx_state;
 
     logic    tx_data_done ;
@@ -38,44 +38,44 @@ module uart_tx(
         begin
         if(!resetn_i)
             begin
-            tx_state <= S_TX_IDLE;
+            tx_state <= TX_IDLE;
             end
         else
             begin
             case(tx_state)
-                S_TX_IDLE :
+                TX_IDLE :
                     begin
                     if(tx_trigger_i)
                         begin
-                        tx_state <= S_TX_START;
+                        tx_state <= TX_START;
                         end
                     end
-                S_TX_START :
+                TX_START :
                     begin
-                    tx_state <= S_TX_DATA;
+                    tx_state <= TX_DATA;
                     end
-                S_TX_DATA :
+                TX_DATA :
                     begin
                     if(tx_data_done)
                         begin
-                        tx_state <= S_TX_STOP;
+                        tx_state <= TX_STOP;
                         end
                     end
-                S_TX_STOP :
+                TX_STOP :
                     begin
-                    tx_state <= S_TX_IDLE;
+                    tx_state <= TX_IDLE;
                     end
                 default :
                     begin
-                    tx_state <= S_TX_IDLE;
+                    tx_state <= TX_IDLE;
                     end
             endcase
             end
         end
 
-    assign tx_data_state = (tx_state == S_TX_DATA) ? 'h1 : 'h0;
-    assign tx_busy_o     = (tx_state == S_TX_IDLE) ? 'h0 : 'h1;
-    assign tx_done_o     = (tx_state == S_TX_STOP) ? 'h1 : 'h0;
+    assign tx_data_state = (tx_state == TX_DATA) ? 'h1 : 'h0;
+    assign tx_busy_o     = (tx_state == TX_IDLE) ? 'h0 : 'h1;
+    assign tx_done_o     = (tx_state == TX_STOP) ? 'h1 : 'h0;
 
 //------------------------------------------------------------------------------
 // Data Count and shifting
@@ -87,19 +87,19 @@ module uart_tx(
     always_comb
         begin
         case(tx_state)
-            S_TX_IDLE :
+            TX_IDLE :
                 begin
                 uart_tx <= 'h1;
                 end
-            S_TX_START :
+            TX_START :
                 begin
                 uart_tx <= 'h0;
                 end
-            S_TX_DATA :
+            TX_DATA :
                 begin
                 uart_tx <= tx_data_reg[0];
                 end
-            S_TX_STOP :
+            TX_STOP :
                 begin
                 uart_tx <= 'h1;
                 end

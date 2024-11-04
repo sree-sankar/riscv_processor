@@ -12,6 +12,7 @@
 // TBD
 //    -- Clock Domain clock to Core, APB and Memory Clock
 //    -- Buffering to handle throughput
+//    -- Handle the read APB latency
 //------------------------------------------------------------------------------
 
 `include "../risc-v/riscv.vh"
@@ -19,7 +20,10 @@
 `include "../memory_map.vh"
 
 module mem2apb_bridge(
-    // Clock and Reset
+    // Core Clock and Reset
+    input                       core_clk_i         ,
+    input                       core_resetn_i      ,
+    // APB Clock and Reset
     input                       m_apb_pclk_i       ,
     input                       m_apb_presetn_i    ,
     // Core Data Memory Interface
@@ -61,6 +65,27 @@ module mem2apb_bridge(
                      ((mem_addr_i >= `UART0_BASE_ADDR) && mem_addr_i <= (`UART0_BASE_ADDR + `UART0_OFFSET)) ? UART_SEL : 'h0;
 
 //------------------------------------------------------------------------------
+// Dev Select register
+//------------------------------------------------------------------------------
+
+    logic [1:0]    dev_sel_reg    ;
+    logic          mem_read_en_reg;
+
+    always_ff @(posedge core_clk_i)
+        begin
+        if(!core_resetn_i)
+            begin
+            dev_sel_reg     <= 'h0;
+            mem_read_en_reg <= 'h0;
+            end
+        else
+            begin
+            dev_sel_reg     <= dev_sel;
+            mem_read_en_reg <= mem_read_en_i;
+            end
+        end
+
+//------------------------------------------------------------------------------
 // Muxing
 //------------------------------------------------------------------------------
 
@@ -76,7 +101,9 @@ module mem2apb_bridge(
     assign write_en_o          = dev_sel[1] ? mem_write_en_i   : 'h0;
 
     // Read Data Muxing
-    assign mem_read_data_o     = dev_sel[1] ? dcache_read_data_i : read_data_i;
+    assign mem_read_data_o     = (mem_read_en_reg & dev_sel_reg[0]) ? dcache_read_data_i : read_data_i;
+
+    // Write Data Muxing
     assign write_data_o        = dev_sel[1] ? mem_write_data_i   : 'h0;
 
     // APB Select
