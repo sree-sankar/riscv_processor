@@ -2,13 +2,13 @@
 ![Alt Text](./docs/Diagram/Architecture.png)
 
 ## Tool Required
-- Vivado 2024.1
+- Xilinx Vivado 2024.1
 
 ## Steps to build and run
 - Clone the Repo
-- Open the project
+- Open the project file in Vivado
     ```
-    ./vivado_prj/risc_xpr
+    ./vivado_prj/risc_v.xpr
     ```
 - Build the code
 
