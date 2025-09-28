@@ -21,6 +21,7 @@ module instr_exec(
     input                           halt_i          , // Halt control
     input  [          `XLEN-1:0]    pc_i            , // PC value
     input  [  `OPCODE_WIDTH-1:0]    opcode_i        , // Opcode
+    input  [          `XLEN-1:0]    exec_op_i       , // PC value
     input  [  `FUNCT3_WIDTH-1:0]    funct3_i        , // Function 3
     input  [  `FUNCT7_WIDTH-1:0]    funct7_i        , // Function 7
     input  [`SYS_REGS_WIDTH-1:0]    rd_addr_i       , // Address of destionation register
@@ -43,36 +44,6 @@ module instr_exec(
     output [                4:0]    rd_write_fmt_o  , // rd Write format
     output [          `XLEN-1:0]    rd_data_o         // Data to be written to rd register
 );
-
-    // Parameter for Control Path
-    localparam [32:0] NOP          = 32'h0000_0000, // No operation
-                      ALU_ADD      = 32'h0000_0001, // Add Signed
-                      ALU_ADDU     = 32'h0000_0002, // Add Usigned
-                      ALU_SUB      = 32'h0000_0004, // Subtraction
-                      ALU_SLL      = 32'h0000_0008, // Shift Left
-                      ALU_SRL      = 32'h0000_0010, // Shift right logic
-                      ALU_SRA      = 32'h0000_0020, // Shift right arithmetic
-                      ALU_SLT      = 32'h0000_0040, // Less than
-                      ALU_SLTU     = 32'h0000_0080, // Less than unsigned
-                      ALU_XOR      = 32'h0000_0100, // XOR operation
-                      ALU_OR       = 32'h0000_0200, // OR operation
-                      ALU_AND      = 32'h0000_0400, // AND operation
-                      ALU_BEQ      = 32'h0000_0800, // Branch Equal
-                      ALU_BNE      = 32'h0000_1000, // Branch Not Equal
-                      ALU_BLT      = 32'h0000_2000, // Branch Less than
-                      ALU_BLTU     = 32'h0000_4000, // Branch Less than unsigned
-                      ALU_BGE      = 32'h0000_8000, // Branch Less than
-                      ALU_BGEU     = 32'h0001_0000, // Branch Less than unsigned
-                      INSTR_JUMP   = 32'h0002_0000, // For JAL and JALR
-                      LUI_AUIPC    = 32'h0004_0000, // Register Store
-                      MEM_LB       = 32'h0008_0000, // Memory Load Byte
-                      MEM_LH       = 32'h0010_0000, // Memory Load High 16
-                      MEM_LW       = 32'h0020_0000, // Memory Load Word
-                      MEM_LBU      = 32'h0040_0000, // Memory Load Byte unsigned
-                      MEM_LHU      = 32'h0080_0000, // Memory Load Higher unsigned
-                      MEM_SB       = 32'h0100_0000, // Memory Store Byte
-                      MEM_SH       = 32'h0200_0000, // Memory Store High 16
-                      MEM_SW       = 32'h0400_0000; // Memory Store Word
 
 //------------------------------------------------------------------------------
 // Execute Enable
@@ -101,7 +72,6 @@ module instr_exec(
 //      Write to x0 must raise exception
 //------------------------------------------------------------------------------
 
-    logic [     31:0]    exec_op      ;
     logic [      1:0]    adder_op     ;
     logic [      5:0]    compare_op   ;
     logic [      2:0]    shift_op     ;
@@ -118,99 +88,25 @@ module instr_exec(
     logic [`XLEN-1:0]    compare_res  ;
     logic [      4:0]    rd_write_fmt ;
 
-    always_comb
-        begin
-        case(opcode_i)
-            `OP :
-                begin
-                case(funct3_i)
-                    `FN3_ADD_SUB : exec_op <= (funct7_i == `FN7_F0) ? ALU_ADD  :
-                                              (funct7_i == `FN7_F1) ? ALU_SUB  : NOP;
-                    `FN3_SLL     : exec_op <= (funct7_i == `FN7_F0) ? ALU_SLL  : NOP;
-                    `FN3_SLT     : exec_op <= (funct7_i == `FN7_F0) ? ALU_SLT  : NOP;
-                    `FN3_SLTU    : exec_op <= (funct7_i == `FN7_F0) ? ALU_SLTU : NOP;
-                    `FN3_XOR     : exec_op <= (funct7_i == `FN7_F0) ? ALU_XOR  : NOP;
-                    `FN3_SRL_SRA : exec_op <= (funct7_i == `FN7_F0) ? ALU_SRL  :
-                                              (funct7_i == `FN7_F1) ? ALU_SRA  : NOP;
-                    `FN3_OR      : exec_op <= (funct7_i == `FN7_F0) ? ALU_OR   : NOP;
-                    `FN3_AND     : exec_op <= (funct7_i == `FN7_F0) ? ALU_AND  : NOP;
-                    default      : exec_op <= NOP;
-                endcase
-                end
-            `OP_IMM :
-                begin
-                case(funct3_i)
-                    `FN3_ADDI      : exec_op <= ALU_ADD;
-                    `FN3_SLLI      : exec_op <= (funct7_i == `FN7_F0) ? ALU_SLL : NOP;
-                    `FN3_SLTI      : exec_op <= ALU_SLT ;
-                    `FN3_SLTIU     : exec_op <= ALU_SLTU;
-                    `FN3_XORI      : exec_op <= ALU_XOR ;
-                    `FN3_SRLI_SRAI : exec_op <= (funct7_i == `FN7_F0) ? ALU_SRL :
-                                                (funct7_i == `FN7_F1) ? ALU_SRA : NOP;
-                    `FN3_ORI       : exec_op <= ALU_OR ;
-                    `FN3_ANDI      : exec_op <= ALU_AND;
-                    default        : exec_op <= NOP    ;
-                endcase
-                end
-            `BRANCH :
-                begin
-                case(funct3_i)
-                    `FN3_BEQ  : exec_op <= ALU_BEQ ;
-                    `FN3_BNE  : exec_op <= ALU_BNE ;
-                    `FN3_BLT  : exec_op <= ALU_BLT ;
-                    `FN3_BGE  : exec_op <= ALU_BGE ;
-                    `FN3_BLTU : exec_op <= ALU_BLTU;
-                    `FN3_BGEU : exec_op <= ALU_BGEU;
-                    default   : exec_op <= NOP;
-                endcase
-                end
-            `LUI   : exec_op <= LUI_AUIPC ;
-            `AUIPC : exec_op <= LUI_AUIPC ;
-            `JAL   : exec_op <= INSTR_JUMP;
-            `JALR  : exec_op <= INSTR_JUMP;
-            `LOAD  :
-                begin
-                case(funct3_i)
-                    `FN3_LB  : exec_op <= MEM_LB ;
-                    `FN3_LH  : exec_op <= MEM_LH ;
-                    `FN3_LW  : exec_op <= MEM_LW ;
-                    `FN3_LBU : exec_op <= MEM_LBU;
-                    `FN3_LHU : exec_op <= MEM_LHU;
-                    default  : exec_op <= NOP;
-                endcase
-                end
-            `STORE :
-                begin
-                case(funct3_i)
-                    `FN3_SB  : exec_op <= MEM_SB ;
-                    `FN3_SH  : exec_op <= MEM_SH ;
-                    `FN3_SW  : exec_op <= MEM_SW ;
-                    default  : exec_op <= NOP;
-                endcase
-                end
-            default : exec_op <= NOP;
-        endcase
-        end
-
     // Arithmetic Operation Control
-    assign adder_op   = exec_op[ 1:0] | exec_op[18] | {1'b0,(branch_en | mem_read_en | mem_write_en)};
-    assign sub_en     = exec_op[   2];
-    assign shift_op   = exec_op[ 5:3];
-    assign compare_op = {exec_op[7:6],2'b00} | exec_op[16:11];
+    assign adder_op   = exec_op_i[ 1:0] | exec_op_i[18] | {1'b0,(branch_en | mem_read_en | mem_write_en)};
+    assign sub_en     = exec_op_i[   2];
+    assign shift_op   = exec_op_i[ 5:3];
+    assign compare_op = {exec_op_i[7:6],2'b00} | exec_op_i[16:11];
 
     // Logical Operation Control
-    assign xor_en = exec_op[ 8];
-    assign or_en  = exec_op[ 9];
-    assign and_en = exec_op[10];
+    assign xor_en = exec_op_i[ 8];
+    assign or_en  = exec_op_i[ 9];
+    assign and_en = exec_op_i[10];
 
     // Register Write Control
-    assign rd_write_en  = |exec_op & !exec_op[16:11] & !mem_write_en;
-    assign rd_write_fmt = exec_op[23:19] ;
-    assign mem_read_en  = |exec_op[23:19];
-    assign mem_write_en = |exec_op[26:24];
+    assign rd_write_en  = |exec_op_i & !exec_op_i[16:11] & !mem_write_en;
+    assign rd_write_fmt = exec_op_i[23:19] ;
+    assign mem_read_en  = |exec_op_i[23:19];
+    assign mem_write_en = |exec_op_i[26:24];
 
     // Branch Control
-    assign branch_en = exec_op[17] | (exec_op[16:11] && compare_res[0]);
+    assign branch_en = exec_op_i[17] | (exec_op_i[16:11] && compare_res[0]);
 
 //------------------------------------------------------------------------------
 // Data Path
@@ -331,9 +227,9 @@ module instr_exec(
         end
 
     // Memeory Write Data
-    assign mem_write_data = exec_op[24] ? {{(`XLEN-8){1'b0}},rs2_data_i[7:0]}   :
-                            exec_op[25] ? {{(`XLEN-16){1'b0}},rs2_data_i[15:0]} :
-                            exec_op[26] ? rs2_data_i : 'h0;
+    assign mem_write_data = exec_op_i[24] ? {{(`XLEN-8){1'b0}},rs2_data_i[7:0]}   :
+                            exec_op_i[25] ? {{(`XLEN-16){1'b0}},rs2_data_i[15:0]} :
+                            exec_op_i[26] ? rs2_data_i : 'h0;
 
 //------------------------------------------------------------------------------
 // ALU Unit

@@ -28,6 +28,7 @@ module tb_riscv();
     logic [`XLEN-1:0]    mem_read_data_i ; // Memory Read Data
     logic                mem_write_en_o  ; // Memory Write Enable
     logic [`XLEN-1:0]    mem_write_data_o; // Memory Write Data
+    logic [`XLEN-1:0]    instr [0:100]   ; // Instruction Memory
 
 //------------------------------------------------------------------------------
 // DUT
@@ -46,7 +47,6 @@ module tb_riscv();
         begin
         clk_i    <= 'h1;
         resetn_i <= 'h0;
-        instr_i  <= 'h0;
         // Reset Release
         #10 resetn_i <= 1'b1;
 
@@ -109,62 +109,93 @@ module tb_riscv();
         // #10 instr_i <= {`FN7_F0,`X1,`X0,`FN3_ADD_SUB,`X4,`OP}; // ADD
 
         // Memory Forwarding
-        #10 instr_i <= {7'h0,`X3,`X2,`FN3_SW,5'h0,`STORE};
-        #10 instr_i <= {12'h0,`X2,`FN3_LHU,`X5,`LOAD};
+        // #10 instr_i <= {7'h0,`X3,`X2,`FN3_SW,5'h0,`STORE};
+        // #10 instr_i <= {12'h0,`X2,`FN3_LHU,`X5,`LOAD};
 
-        // Hello World! Assembly ASCII
+        // // Hello World! Assembly ASCII
 
-        // Generate Address
-        #10 instr_i <= {12'h00A,`X0,`FN3_ADDI,`X1,`OP_IMM};
-        #10 instr_i <= {12'h01C,`X1,`FN3_SLLI,`X2,`OP_IMM};
-        #10 instr_i <= {12'h004,`X2,`FN3_ADDI,`X2,`OP_IMM};
+        // // Generate Address
+        // #10 instr_i <= {12'h00A,`X0,`FN3_ADDI,`X1,`OP_IMM};
+        // #10 instr_i <= {12'h01C,`X1,`FN3_SLLI,`X2,`OP_IMM};
+        // #10 instr_i <= {12'h004,`X2,`FN3_ADDI,`X2,`OP_IMM};
 
-        // TX Data to UART Controller
-        #10 instr_i <= {12'h048,`X0,`FN3_ADDI,`X1,`OP_IMM}; // H
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // H
-        #10 instr_i <= {12'h065,`X0,`FN3_ADDI,`X1,`OP_IMM}; // e
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // e
-        #10 instr_i <= {12'h06C,`X0,`FN3_ADDI,`X1,`OP_IMM}; // l
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // l
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // l
-        #10 instr_i <= {12'h06F,`X0,`FN3_ADDI,`X1,`OP_IMM}; // o
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // o
-        #10 instr_i <= {12'h020,`X0,`FN3_ADDI,`X1,`OP_IMM}; // Space
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // Space
-        #10 instr_i <= {12'h057,`X0,`FN3_ADDI,`X1,`OP_IMM}; // W
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // W
-        #10 instr_i <= {12'h06F,`X0,`FN3_ADDI,`X1,`OP_IMM}; // o
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // o
-        #10 instr_i <= {12'h072,`X0,`FN3_ADDI,`X1,`OP_IMM}; // r
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // r
-        #10 instr_i <= {12'h06C,`X0,`FN3_ADDI,`X1,`OP_IMM}; // l
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // l
-        #10 instr_i <= {12'h064,`X0,`FN3_ADDI,`X1,`OP_IMM}; // d
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // d
-        #10 instr_i <= {12'h021,`X0,`FN3_ADDI,`X1,`OP_IMM}; // !
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // !
+        // // TX Data to UART Controller
+        // #10 instr_i <= {12'h048,`X0,`FN3_ADDI,`X1,`OP_IMM}; // H
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // H
+        // #10 instr_i <= {12'h065,`X0,`FN3_ADDI,`X1,`OP_IMM}; // e
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // e
+        // #10 instr_i <= {12'h06C,`X0,`FN3_ADDI,`X1,`OP_IMM}; // l
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // l
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // l
+        // #10 instr_i <= {12'h06F,`X0,`FN3_ADDI,`X1,`OP_IMM}; // o
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // o
+        // #10 instr_i <= {12'h020,`X0,`FN3_ADDI,`X1,`OP_IMM}; // Space
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // Space
+        // #10 instr_i <= {12'h057,`X0,`FN3_ADDI,`X1,`OP_IMM}; // W
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // W
+        // #10 instr_i <= {12'h06F,`X0,`FN3_ADDI,`X1,`OP_IMM}; // o
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // o
+        // #10 instr_i <= {12'h072,`X0,`FN3_ADDI,`X1,`OP_IMM}; // r
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // r
+        // #10 instr_i <= {12'h06C,`X0,`FN3_ADDI,`X1,`OP_IMM}; // l
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // l
+        // #10 instr_i <= {12'h064,`X0,`FN3_ADDI,`X1,`OP_IMM}; // d
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // d
+        // #10 instr_i <= {12'h021,`X0,`FN3_ADDI,`X1,`OP_IMM}; // !
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE }; // !
 
-        // UART TX Enable
-        #10 instr_i <= {12'h00A,`X0,`FN3_ADDI,`X1,`OP_IMM};
-        #10 instr_i <= {12'h01C,`X1,`FN3_SLLI,`X2,`OP_IMM};
-        #10 instr_i <= {12'h001,`X0,`FN3_ADDI,`X1,`OP_IMM};
-        #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE };
-        #10 instr_i <= {12'h78,`X0,3'h0,`X0,`JALR}; // Jump and link register
+        // // UART TX Enable
+        // #10 instr_i <= {12'h00A,`X0,`FN3_ADDI,`X1,`OP_IMM};
+        // #10 instr_i <= {12'h01C,`X1,`FN3_SLLI,`X2,`OP_IMM};
+        // #10 instr_i <= {12'h001,`X0,`FN3_ADDI,`X1,`OP_IMM};
+        // #10 instr_i <= {7'h0,`X1,`X2,`FN3_SB,5'h0,`STORE };
+        // #10 instr_i <= {12'h78,`X0,3'h0,`X0,`JALR}; // Jump and link register
 
-        #10 instr_i <= 'h0;
-    #50 $finish;
+        // #10 instr_i <= 'h0;
+    #5000 $finish;
     end
+
+    initial
+        begin
+        // ---------------- Program Start: init ----------------
+        instr[0] <= {12'h000, `X0, `FN3_ADDI, `X1, `OP_IMM};    // 1: addi x1, x0, 0        ; index = 0
+        instr[1] <= {12'h100, `X0, `FN3_ADDI, `X2, `OP_IMM};    // 2: addi x2, x0, 0x100    ; base = 0x100
+        instr[2] <= {12'h064, `X0, `FN3_ADDI, `X3, `OP_IMM};    // 3: addi x3, x0, 10       ; count = 10
+        // ---------------- Store Loop (100 stores) ----------------
+        instr[3] <= {12'hFFF, `X3, `FN3_ADDI, `X3, `OP_IMM};     //15: addi x3, x3, -1      ; count--
+        instr[4] <= {7'h7F, `X0, `X3, `FN3_BNE, 5'b11101, `BRANCH}; // bne x3, x0, -4 bytes
+        instr[5] <= {12'h001, `X0, `FN3_ADDI, `X4, `OP_IMM};    // 3: addi x3, x0, 10       ;
+        instr[6] <= {12'h002, `X0, `FN3_ADDI, `X5, `OP_IMM};    // 3: addi x3, x0, 10       ;
+        instr[7] <= {12'h004, `X0, `FN3_ADDI, `X6, `OP_IMM};    // 3: addi x3, x0, 10       ;
+        instr[8] <= {12'h008, `X0, `FN3_ADDI, `X7, `OP_IMM};    // 3: addi x3, x0, 10       ;
+        instr[9] <= {12'h008, `X0, `FN3_ADDI, `X7, `OP_IMM};    // 3: addi x3, x0, 10       ;
+        instr[10] <= {12'h008, `X0, `FN3_ADDI, `X7, `OP_IMM};    // 3: addi x3, x0, 10      ;
+        #50 $finish;
+        end
+
+    always_ff @(posedge clk_i)
+        begin
+        instr_i <= instr[instr_addr_o >> 2];
+        end
+
+//------------------------------------------------------------------------------
+// Memory Emulation
+//------------------------------------------------------------------------------
+
+    localparam MEM_WIDTH = 1000;
+
+    logic [31:0] mem [0:MEM_WIDTH-1];
 
     // Memory Read Data
     always_ff @(posedge clk_i)
         begin
+        if(mem_write_en_o)
+            begin
+            mem[mem_addr_o] <= mem_write_data_o;
+            end
         if(mem_read_en_o)
             begin
-            mem_read_data_i <= 'hA0A0_8080;
-            end
-        else
-            begin
-            mem_read_data_i <= 'h0;
+            mem_read_data_i[mem_addr_o] <= mem[mem_addr_o];
             end
         end
 

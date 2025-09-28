@@ -28,6 +28,7 @@ module instr_decode(
     // Output
     output [          `XLEN-1:0]    pc_o             , // PC out
     output [  `OPCODE_WIDTH-1:0]    opcode_o         , // Opcode
+    output [          `XLEN-1:0]    exec_op_o        , // Execute Opcode
     output [`SYS_REGS_WIDTH-1:0]    rd_addr_o        , // Operand register
     output [  `FUNCT3_WIDTH-1:0]    funct3_o         , // Function 3
     output [`SYS_REGS_WIDTH-1:0]    rs1_addr_o       , // Source address
@@ -96,6 +97,119 @@ module instr_decode(
     assign imm_j_data = {{12{instr_i[`J_IMMH_B]}},instr_i[`J_IMMMH_B],instr_i[`J_IMMML_B],instr_i[`J_IMML_B],1'b0}; // J-Type Immediate Decoding
 
 //------------------------------------------------------------------------------
+// Opcode Decoding
+//------------------------------------------------------------------------------
+
+    // Parameter for Control Path
+    localparam [32:0] NOP        = 32'h0000_0000, // No operation
+                      ALU_ADD    = 32'h0000_0001, // Add Signed
+                      ALU_ADDU   = 32'h0000_0002, // Add Usigned
+                      ALU_SUB    = 32'h0000_0004, // Subtraction
+                      ALU_SLL    = 32'h0000_0008, // Shift Left
+                      ALU_SRL    = 32'h0000_0010, // Shift right logic
+                      ALU_SRA    = 32'h0000_0020, // Shift right arithmetic
+                      ALU_SLT    = 32'h0000_0040, // Less than
+                      ALU_SLTU   = 32'h0000_0080, // Less than unsigned
+                      ALU_XOR    = 32'h0000_0100, // XOR operation
+                      ALU_OR     = 32'h0000_0200, // OR operation
+                      ALU_AND    = 32'h0000_0400, // AND operation
+                      ALU_BEQ    = 32'h0000_0800, // Branch Equal
+                      ALU_BNE    = 32'h0000_1000, // Branch Not Equal
+                      ALU_BLT    = 32'h0000_2000, // Branch Less than
+                      ALU_BLTU   = 32'h0000_4000, // Branch Less than unsigned
+                      ALU_BGE    = 32'h0000_8000, // Branch Less than
+                      ALU_BGEU   = 32'h0001_0000, // Branch Less than unsigned
+                      INSTR_JUMP = 32'h0002_0000, // For JAL and JALR
+                      LUI_AUIPC  = 32'h0004_0000, // Register Store
+                      MEM_LB     = 32'h0008_0000, // Memory Load Byte
+                      MEM_LH     = 32'h0010_0000, // Memory Load High 16
+                      MEM_LW     = 32'h0020_0000, // Memory Load Word
+                      MEM_LBU    = 32'h0040_0000, // Memory Load Byte unsigned
+                      MEM_LHU    = 32'h0080_0000, // Memory Load Higher unsigned
+                      MEM_SB     = 32'h0100_0000, // Memory Store Byte
+                      MEM_SH     = 32'h0200_0000, // Memory Store High 16
+                      MEM_SW     = 32'h0400_0000; // Memory Store Word
+
+    logic [`XLEN-1:0] exec_op  ;
+    logic             imm_instr;
+
+    always_comb
+        begin
+        imm_instr = 1'b0;
+        case(opcode)
+            `OP :
+                begin
+                case(funct3)
+                    `FN3_ADD_SUB : exec_op <= (funct7 == `FN7_F0) ? ALU_ADD  :
+                                              (funct7 == `FN7_F1) ? ALU_SUB  : NOP;
+                    `FN3_SLL     : exec_op <= (funct7 == `FN7_F0) ? ALU_SLL  : NOP;
+                    `FN3_SLT     : exec_op <= (funct7 == `FN7_F0) ? ALU_SLT  : NOP;
+                    `FN3_SLTU    : exec_op <= (funct7 == `FN7_F0) ? ALU_SLTU : NOP;
+                    `FN3_XOR     : exec_op <= (funct7 == `FN7_F0) ? ALU_XOR  : NOP;
+                    `FN3_SRL_SRA : exec_op <= (funct7 == `FN7_F0) ? ALU_SRL  :
+                                              (funct7 == `FN7_F1) ? ALU_SRA  : NOP;
+                    `FN3_OR      : exec_op <= (funct7 == `FN7_F0) ? ALU_OR   : NOP;
+                    `FN3_AND     : exec_op <= (funct7 == `FN7_F0) ? ALU_AND  : NOP;
+                    default      : exec_op <= NOP;
+                endcase
+                end
+            `OP_IMM :
+                begin
+                imm_instr = 1'b1;
+                case(funct3)
+                    `FN3_ADDI      : exec_op <= ALU_ADD;
+                    `FN3_SLLI      : exec_op <= (funct7 == `FN7_F0) ? ALU_SLL : NOP;
+                    `FN3_SLTI      : exec_op <= ALU_SLT ;
+                    `FN3_SLTIU     : exec_op <= ALU_SLTU;
+                    `FN3_XORI      : exec_op <= ALU_XOR ;
+                    `FN3_SRLI_SRAI : exec_op <= (funct7 == `FN7_F0) ? ALU_SRL :
+                                                (funct7 == `FN7_F1) ? ALU_SRA : NOP;
+                    `FN3_ORI       : exec_op <= ALU_OR ;
+                    `FN3_ANDI      : exec_op <= ALU_AND;
+                    default        : exec_op <= NOP    ;
+                endcase
+                end
+            `BRANCH :
+                begin
+                case(funct3)
+                    `FN3_BEQ  : exec_op <= ALU_BEQ ;
+                    `FN3_BNE  : exec_op <= ALU_BNE ;
+                    `FN3_BLT  : exec_op <= ALU_BLT ;
+                    `FN3_BGE  : exec_op <= ALU_BGE ;
+                    `FN3_BLTU : exec_op <= ALU_BLTU;
+                    `FN3_BGEU : exec_op <= ALU_BGEU;
+                    default   : exec_op <= NOP;
+                endcase
+                end
+            `LUI   : exec_op <= LUI_AUIPC ;
+            `AUIPC : exec_op <= LUI_AUIPC ;
+            `JAL   : exec_op <= INSTR_JUMP;
+            `JALR  : exec_op <= INSTR_JUMP;
+            `LOAD  :
+                begin
+                case(funct3)
+                    `FN3_LB  : exec_op <= MEM_LB ;
+                    `FN3_LH  : exec_op <= MEM_LH ;
+                    `FN3_LW  : exec_op <= MEM_LW ;
+                    `FN3_LBU : exec_op <= MEM_LBU;
+                    `FN3_LHU : exec_op <= MEM_LHU;
+                    default  : exec_op <= NOP;
+                endcase
+                end
+            `STORE :
+                begin
+                case(funct3)
+                    `FN3_SB  : exec_op <= MEM_SB;
+                    `FN3_SH  : exec_op <= MEM_SH;
+                    `FN3_SW  : exec_op <= MEM_SW;
+                    default  : exec_op <= NOP   ;
+                endcase
+                end
+            default : exec_op <= NOP;
+        endcase
+        end
+
+//------------------------------------------------------------------------------
 // Pipeline Stage Register
 // On Halt write to system register 0 which will be ignored as per RISC V
 // architecture
@@ -107,6 +221,7 @@ module instr_decode(
     logic [          `XLEN-1:0]    rs2_addr_reg  ; // rd register
     logic [`SYS_REGS_WIDTH-1:0]    rd_addr_reg   ; // rd register
     logic [  `OPCODE_WIDTH-1:0]    opcode_reg    ; // Opcode register
+    logic [          `XLEN-1:0]    exec_op_reg   ; // Execution Opcode register
     logic [  `FUNCT3_WIDTH-1:0]    funct3_reg    ; // Function 3 register
     logic [  `FUNCT7_WIDTH-1:0]    funct7_reg    ; // Function 7 register
     logic [          `XLEN-1:0]    imm_i_data_reg; // I type immediate data register
@@ -114,6 +229,7 @@ module instr_decode(
     logic [          `XLEN-1:0]    imm_b_data_reg; // B type immediate data register
     logic [          `XLEN-1:0]    imm_u_data_reg; // U type immediate data register
     logic [          `XLEN-1:0]    imm_j_data_reg; // J type immediate data register
+    logic [                2:0]    imm_instr_reg ;
 
     always_ff @(posedge clk_i)
         begin
@@ -124,6 +240,7 @@ module instr_decode(
             rs1_addr_reg   <= 'h0;
             rs2_addr_reg   <= 'h0;
             opcode_reg     <= 'h0;
+            exec_op_reg    <= 'h0;
             rd_addr_reg    <= 'h0;
             funct3_reg     <= 'h0;
             funct7_reg     <= 'h0;
@@ -132,17 +249,15 @@ module instr_decode(
             imm_b_data_reg <= 'h0;
             imm_u_data_reg <= 'h0;
             imm_j_data_reg <= 'h0;
+            imm_instr_reg  <= 'h0;
             end
         else
             begin
-            if(halt_i)
-                begin
                 pc_reg         <= pc_i      ;
                 pc_d_reg       <= pc_reg    ;
                 rs1_addr_reg   <= rs1_addr  ;
                 rs2_addr_reg   <= rs2_addr  ;
                 opcode_reg     <= opcode    ;
-                rd_addr_reg    <= 'h0       ;
                 funct3_reg     <= funct3    ;
                 funct7_reg     <= funct7    ;
                 imm_i_data_reg <= imm_i_data;
@@ -150,22 +265,16 @@ module instr_decode(
                 imm_b_data_reg <= imm_b_data;
                 imm_u_data_reg <= imm_u_data;
                 imm_j_data_reg <= imm_j_data;
+                imm_instr_reg  <= {imm_instr_reg[1:0],imm_instr};
+            if(halt_i)
+                begin
+                rd_addr_reg <= 'h0;
+                exec_op_reg <= NOP;
                 end
             else
                 begin
-                pc_reg         <= pc_i      ;
-                pc_d_reg       <= pc_reg    ;
-                rs1_addr_reg   <= rs1_addr  ;
-                rs2_addr_reg   <= rs2_addr  ;
-                opcode_reg     <= opcode    ;
-                rd_addr_reg    <= rd_addr   ;
-                funct3_reg     <= funct3    ;
-                funct7_reg     <= funct7    ;
-                imm_i_data_reg <= imm_i_data;
-                imm_s_data_reg <= imm_s_data;
-                imm_b_data_reg <= imm_b_data;
-                imm_u_data_reg <= imm_u_data;
-                imm_j_data_reg <= imm_j_data;
+                rd_addr_reg <= rd_addr;
+                exec_op_reg <= exec_op;
                 end
             end
         end
@@ -203,15 +312,15 @@ module instr_decode(
 
     // rd Execute Stage Forwarding
     assign forward_rs1[0] = (forward_rd_addr_i == rs1_addr_reg) ? forward_en : 1'b0;
-    assign forward_rs2[0] = (forward_rd_addr_i == rs2_addr_reg) ? forward_en : 1'b0;
+    assign forward_rs2[0] = (forward_rd_addr_i == rs2_addr_reg) ? forward_en & ~imm_instr_reg[0] : 1'b0;
 
     // rd Memory Stage Forwarding
     assign forward_rs1[1] = (forward_rd_addr[0] == rs1_addr_reg) ? forward_en : 1'b0;
-    assign forward_rs2[1] = (forward_rd_addr[0] == rs2_addr_reg) ? forward_en : 1'b0;
+    assign forward_rs2[1] = (forward_rd_addr[0] == rs2_addr_reg) ? forward_en & ~imm_instr_reg[1] : 1'b0;
 
     // rd Reg Write Stage Forwarding
     assign forward_rs1[2] = (forward_rd_addr[1] == rs1_addr_reg) ? forward_en : 1'b0;
-    assign forward_rs2[2] = (forward_rd_addr[1] == rs2_addr_reg) ? forward_en : 1'b0;
+    assign forward_rs2[2] = (forward_rd_addr[1] == rs2_addr_reg) ? forward_en & ~imm_instr_reg[2] : 1'b0;
 
 //------------------------------------------------------------------------------
 // Output
@@ -219,6 +328,7 @@ module instr_decode(
 
     assign pc_o         = decode_enable ? pc_d_reg       : 'h0;
     assign opcode_o     = decode_enable ? opcode_reg     : 'h0;
+    assign exec_op_o    = decode_enable ? exec_op_reg    : 'h0;
     assign rd_addr_o    = decode_enable ? rd_addr_reg    : 'h0;
     assign funct3_o     = decode_enable ? funct3_reg     : 'h0;
     assign funct7_o     = decode_enable ? funct7_reg     : 'h0;

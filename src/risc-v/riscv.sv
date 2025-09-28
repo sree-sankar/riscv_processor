@@ -41,6 +41,7 @@ module riscv(
 
     logic [          `XLEN-1:0]    decode_pc        ; // Decoded PC
     logic [  `OPCODE_WIDTH-1:0]    decode_opcode    ; // Decoded Opcode
+    logic [          `XLEN-1:0]    decode_exec_op   ; // Decoded Opcode
     logic [`SYS_REGS_WIDTH-1:0]    decode_rd_addr   ; // Decoded destination address
     logic [  `FUNCT3_WIDTH-1:0]    decode_funct3    ; // Decoded Function 3
     logic [`SYS_REGS_WIDTH-1:0]    decode_rs1_addr  ; // Decoded rs1_addr
@@ -131,6 +132,7 @@ module riscv(
         .forward_rd_data_i (exec_rd_data                 ),
         .pc_o              (decode_pc                    ),
         .opcode_o          (decode_opcode                ),
+        .exec_op_o         (decode_exec_op               ),
         .funct3_o          (decode_funct3                ),
         .funct7_o          (decode_funct7                ),
         .rs1_addr_o        (decode_rs1_addr              ),
@@ -156,6 +158,7 @@ module riscv(
         .halt_i            (halt_exec                    ),
         .pc_i              (decode_pc                    ),
         .opcode_i          (decode_opcode                ),
+        .exec_op_i         (decode_exec_op               ),
         .funct3_i          (decode_funct3                ),
         .funct7_i          (decode_funct7                ),
         .rd_addr_i         (decode_rd_addr               ),
