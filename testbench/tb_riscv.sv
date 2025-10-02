@@ -162,7 +162,7 @@ module tb_riscv();
         instr[1] <= {12'h100, `X0, `FN3_ADDI, `X2, `OP_IMM};    // 2: addi x2, x0, 0x100    ; base = 0x100
         instr[2] <= {12'h064, `X0, `FN3_ADDI, `X3, `OP_IMM};    // 3: addi x3, x0, 10       ; count = 10
         // ---------------- Store Loop (100 stores) ----------------
-        instr[3] <= {12'hFFF, `X3, `FN3_ADDI, `X3, `OP_IMM};     //15: addi x3, x3, -1      ; count--
+        instr[3] <= {12'hFFF, `X3, `FN3_ADDI, `X3, `OP_IMM};     //4: addi x3, x3, -1      ; count--
         instr[4] <= {7'h7F, `X0, `X3, `FN3_BNE, 5'b11101, `BRANCH}; // bne x3, x0, -4 bytes
         instr[5] <= {12'h001, `X0, `FN3_ADDI, `X4, `OP_IMM};    // 3: addi x3, x0, 10       ;
         instr[6] <= {12'h002, `X0, `FN3_ADDI, `X5, `OP_IMM};    // 3: addi x3, x0, 10       ;
@@ -173,10 +173,8 @@ module tb_riscv();
         #50 $finish;
         end
 
-    always_ff @(posedge clk_i)
-        begin
-        instr_i <= instr[instr_addr_o >> 2];
-        end
+       assign instr_i = instr[instr_addr_o >> 2];
+        // end
 
 //------------------------------------------------------------------------------
 // Memory Emulation
