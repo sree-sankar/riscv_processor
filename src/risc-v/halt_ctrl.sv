@@ -45,9 +45,9 @@ module halt_ctrl(
 // Output
 //------------------------------------------------------------------------------
 
-    assign halt_decode_o    = branch_en_i;
-    assign halt_exec_o      = branch_en_i  | halt_pipe[0];
-    assign halt_mem_o       = halt_pipe[0] | halt_pipe[1];
-    assign halt_reg_write_o = halt_pipe[1] | halt_pipe[2];
+    assign halt_decode_o    = 1'b0;//branch_en_i;
+    assign halt_exec_o      = 1'b0;//branch_en_i  | halt_pipe[0];
+    assign halt_mem_o       = 1'b0;//halt_pipe[0] | halt_pipe[1];
+    assign halt_reg_write_o = 1'b0;//halt_pipe[1] | halt_pipe[2];
 
 endmodule

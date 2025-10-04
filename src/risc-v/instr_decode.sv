@@ -41,7 +41,10 @@ module instr_decode(
     output [          `XLEN-1:0]    imm_s_data_o     , // S type immediate data
     output [          `XLEN-1:0]    imm_b_data_o     , // B type immediate data
     output [          `XLEN-1:0]    imm_u_data_o     , // U type immediate data
-    output [          `XLEN-1:0]    imm_j_data_o       // J type immediate data
+    output [          `XLEN-1:0]    imm_j_data_o     , // J type immediate data
+    // Branch Signals
+    output [          `XLEN-1:0]    branch_addr_o    ,
+    output                          branch_valid_o
 );
 
 //------------------------------------------------------------------------------
@@ -69,17 +72,18 @@ module instr_decode(
 // Decoding
 //------------------------------------------------------------------------------
 
-    logic [  `OPCODE_WIDTH-1:0]    opcode    ; // Opcode register
-    logic [`SYS_REGS_WIDTH-1:0]    rd_addr   ; // rd register
-    logic [  `FUNCT3_WIDTH-1:0]    funct3    ; // Function 3 register
-    logic [`SYS_REGS_WIDTH-1:0]    rs1_addr  ; // rd register
-    logic [`SYS_REGS_WIDTH-1:0]    rs2_addr  ; // rd register
-    logic [  `FUNCT7_WIDTH-1:0]    funct7    ; // Function 7 register
-    logic [          `XLEN-1:0]    imm_i_data; // I type immediate data register
-    logic [          `XLEN-1:0]    imm_s_data; // S type immediate data register
-    logic [          `XLEN-1:0]    imm_b_data; // B type immediate data register
-    logic [          `XLEN-1:0]    imm_u_data; // U type immediate data register
-    logic [          `XLEN-1:0]    imm_j_data; // J type immediate data register
+    logic [  `OPCODE_WIDTH-1:0]    opcode     ; // Opcode register
+    logic [`SYS_REGS_WIDTH-1:0]    rd_addr    ; // rd register
+    logic [  `FUNCT3_WIDTH-1:0]    funct3     ; // Function 3 register
+    logic [`SYS_REGS_WIDTH-1:0]    rs1_addr   ; // rd register
+    logic [`SYS_REGS_WIDTH-1:0]    rs2_addr   ; // rd register
+    logic [  `FUNCT7_WIDTH-1:0]    funct7     ; // Function 7 register
+    logic [          `XLEN-1:0]    imm_i_data ; // I type immediate data register
+    logic [          `XLEN-1:0]    imm_s_data ; // S type immediate data register
+    logic [          `XLEN-1:0]    imm_b_data ; // B type immediate data register
+    logic [          `XLEN-1:0]    imm_u_data ; // U type immediate data register
+    logic [          `XLEN-1:0]    imm_j_data ; // J type immediate data register
+    logic [          `XLEN-1:0]    branch_addr; // Branch Address
 
     // Instruction Decoding
     assign opcode     = instr_i[`OPCODE_B ];
@@ -90,11 +94,12 @@ module instr_decode(
     assign funct7     = instr_i[`FUNCT7_B ];
 
     // Immediate Data Decoding
-    assign imm_i_data = {{20{instr_i[31]}},instr_i[`I_IMM_B]};// I-Type Immediate Decoding
-    assign imm_s_data = {{20{instr_i[31]}},instr_i[`S_IMMH_B],instr_i[`S_IMML_B]};// S-Type Immediate Decoding
-    assign imm_b_data = {{20{instr_i[`B_IMMH_B]}},instr_i[`B_IMMMH_B],instr_i[`B_IMMML_B],instr_i[`B_IMML_B],1'b0}; // B-Type Immediate Decoding
-    assign imm_u_data = {instr_i[`U_IMM_B],12'b0}; // U-Type Immediate Decoding
-    assign imm_j_data = {{12{instr_i[`J_IMMH_B]}},instr_i[`J_IMMMH_B],instr_i[`J_IMMML_B],instr_i[`J_IMML_B],1'b0}; // J-Type Immediate Decoding
+    assign imm_i_data  = {{20{instr_i[31]}},instr_i[`I_IMM_B]};// I-Type Immediate Decoding
+    assign imm_s_data  = {{20{instr_i[31]}},instr_i[`S_IMMH_B],instr_i[`S_IMML_B]};// S-Type Immediate Decoding
+    assign imm_b_data  = {{20{instr_i[`B_IMMH_B]}},instr_i[`B_IMMMH_B],instr_i[`B_IMMML_B],instr_i[`B_IMML_B],1'b0}; // B-Type Immediate Decoding
+    assign imm_u_data  = {instr_i[`U_IMM_B],12'b0}; // U-Type Immediate Decoding
+    assign imm_j_data  = {{12{instr_i[`J_IMMH_B]}},instr_i[`J_IMMMH_B],instr_i[`J_IMMML_B],instr_i[`J_IMML_B],1'b0}; // J-Type Immediate Decoding
+    assign branch_addr = pc_i + $signed(imm_b_data);
 
 //------------------------------------------------------------------------------
 // Opcode Decoding
@@ -130,12 +135,14 @@ module instr_decode(
                       MEM_SH     = 32'h0200_0000, // Memory Store High 16
                       MEM_SW     = 32'h0400_0000; // Memory Store Word
 
-    logic [`XLEN-1:0] exec_op  ;
-    logic             imm_instr;
+    logic [`XLEN-1:0] exec_op     ;
+    logic             imm_instr   ;
+    logic             branch_instr;
 
     always_comb
         begin
-        imm_instr = 1'b0;
+        imm_instr    = 1'b0;
+        branch_instr = 1'b0;
         case(opcode)
             `OP :
                 begin
@@ -171,6 +178,7 @@ module instr_decode(
                 end
             `BRANCH :
                 begin
+                branch_instr = 1'b1;
                 case(funct3)
                     `FN3_BEQ  : exec_op <= ALU_BEQ ;
                     `FN3_BNE  : exec_op <= ALU_BNE ;
@@ -346,5 +354,9 @@ module instr_decode(
     assign rs2_data_o   = forward_rs2[0] ? forward_rd_data_i  :
                           forward_rs2[1] ? forward_rd_data[0] :
                           forward_rs2[2] ? forward_rd_data[1] : rs2_data_i;
+
+    // Branch
+    assign branch_addr_o  = branch_addr ;
+    assign branch_valid_o = branch_instr;
 
 endmodule

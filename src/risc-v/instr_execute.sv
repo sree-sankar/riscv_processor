@@ -321,7 +321,7 @@ module instr_exec(
 // Output
 //------------------------------------------------------------------------------
 
-    assign branch_en_o      = branch_en_reg     ;
+    assign branch_en_o      = branch_en         ;
     assign branch_addr_o    = branch_addr_reg   ;
     assign rd_data_o        = rd_data_reg       ;
     assign rd_write_en_o    = rd_write_en_reg & exec_enable;

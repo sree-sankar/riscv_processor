@@ -39,22 +39,24 @@ module riscv(
 // Decode Stage
 //------------------------------------------------------------------------------
 
-    logic [          `XLEN-1:0]    decode_pc        ; // Decoded PC
-    logic [  `OPCODE_WIDTH-1:0]    decode_opcode    ; // Decoded Opcode
-    logic [          `XLEN-1:0]    decode_exec_op   ; // Decoded Opcode
-    logic [`SYS_REGS_WIDTH-1:0]    decode_rd_addr   ; // Decoded destination address
-    logic [  `FUNCT3_WIDTH-1:0]    decode_funct3    ; // Decoded Function 3
-    logic [`SYS_REGS_WIDTH-1:0]    decode_rs1_addr  ; // Decoded rs1_addr
-    logic [`SYS_REGS_WIDTH-1:0]    decode_rs2_addr  ; // Decoded rs2_addr
-    logic                          decode_rs_read_en; // Decode rs_read_en
-    logic [  `FUNCT7_WIDTH-1:0]    decode_funct7    ; // Decoded Function 7
-    logic [          `XLEN-1:0]    decode_rs1_data  ; // Decode Read Data
-    logic [          `XLEN-1:0]    decode_rs2_data  ; // Decode Read Data
-    logic [          `XLEN-1:0]    decode_imm_i_data; // Decoded Immediate I type
-    logic [          `XLEN-1:0]    decode_imm_s_data; // Decoded Immediate S type
-    logic [          `XLEN-1:0]    decode_imm_b_data; // Decoded Immediate B type
-    logic [          `XLEN-1:0]    decode_imm_u_data; // Decoded Immediate U type
-    logic [          `XLEN-1:0]    decode_imm_j_data; // Decoded Immediate J type
+    logic [          `XLEN-1:0]    decode_pc          ; // Decoded PC
+    logic [  `OPCODE_WIDTH-1:0]    decode_opcode      ; // Decoded Opcode
+    logic [          `XLEN-1:0]    decode_exec_op     ; // Decoded Opcode
+    logic [`SYS_REGS_WIDTH-1:0]    decode_rd_addr     ; // Decoded destination address
+    logic [  `FUNCT3_WIDTH-1:0]    decode_funct3      ; // Decoded Function 3
+    logic [`SYS_REGS_WIDTH-1:0]    decode_rs1_addr    ; // Decoded rs1_addr
+    logic [`SYS_REGS_WIDTH-1:0]    decode_rs2_addr    ; // Decoded rs2_addr
+    logic                          decode_rs_read_en  ; // Decode rs_read_en
+    logic [  `FUNCT7_WIDTH-1:0]    decode_funct7      ; // Decoded Function 7
+    logic [          `XLEN-1:0]    decode_rs1_data    ; // Decode Read Data
+    logic [          `XLEN-1:0]    decode_rs2_data    ; // Decode Read Data
+    logic [          `XLEN-1:0]    decode_imm_i_data  ; // Decoded Immediate I type
+    logic [          `XLEN-1:0]    decode_imm_s_data  ; // Decoded Immediate S type
+    logic [          `XLEN-1:0]    decode_imm_b_data  ; // Decoded Immediate B type
+    logic [          `XLEN-1:0]    decode_imm_u_data  ; // Decoded Immediate U type
+    logic [          `XLEN-1:0]    decode_imm_j_data  ; // Decoded Immediate J type
+    logic [          `XLEN-1:0]    decode_branch_addr ;
+    logic                          decode_branch_valid;
 
 //------------------------------------------------------------------------------
 // Execute Stage
@@ -108,8 +110,9 @@ module riscv(
         .clk_i             (clk_i                        ),
         .resetn_i          (resetn_i                     ),
         .instr_i           (instr_i                      ),
-        .branch_en_i       (exec_branch_en               ),
-        .branch_addr_i     (exec_branch_addr             ),
+        .branch_valid_i    (decode_branch_valid          ),
+        .branch_addr_i     (decode_branch_addr           ),
+        .branch_taken_i    (exec_branch_en               ),
         .pc_o              (fetch_pc                     ),
         .instr_o           (fetch_instr                  )
     );
@@ -145,7 +148,9 @@ module riscv(
         .imm_s_data_o      (decode_imm_s_data            ),
         .imm_b_data_o      (decode_imm_b_data            ),
         .imm_u_data_o      (decode_imm_u_data            ),
-        .imm_j_data_o      (decode_imm_j_data            )
+        .imm_j_data_o      (decode_imm_j_data            ),
+        .branch_addr_o     (decode_branch_addr           ),
+        .branch_valid_o    (decode_branch_valid          )
     );
 
 //------------------------------------------------------------------------------
