@@ -13,13 +13,15 @@
 
 module halt_ctrl(
     // Input
-    input     clk_i           ,
-    input     resetn_i        ,
-    input     branch_en_i     ,
+    input     clk_i            ,
+    input     resetn_i         ,
+    input     branch_en_i      ,
+    input     branch_valid_i   ,
+    input     bp_target_valid_i,
     // Output
-    output    halt_decode_o   ,
-    output    halt_exec_o     ,
-    output    halt_mem_o      ,
+    output    halt_decode_o    ,
+    output    halt_exec_o      ,
+    output    halt_mem_o       ,
     output    halt_reg_write_o
 );
 
@@ -27,17 +29,23 @@ module halt_ctrl(
 // Halt Control
 //------------------------------------------------------------------------------
 
-    logic [3:0] halt_pipe;
+    logic [3:0] halt_pipe  ;
+    logic       branch_en_d;
+    logic [1:0] branch_valid_pipe;
 
     always_ff @(posedge clk_i)
         begin
         if(!resetn_i)
             begin
-            halt_pipe <= 'h0;
+            halt_pipe         <= 'h0;
+            branch_en_d       <= 'h0;
+            branch_valid_pipe <= 'h0;
             end
         else
             begin
-            halt_pipe <= {halt_pipe[2:0],branch_en_i};
+            branch_en_d       <= branch_en_i;
+            branch_valid_pipe <= {branch_valid_pipe[0],branch_valid_i};
+            halt_pipe         <= {halt_pipe[2:0],(branch_en_d & ~(bp_target_valid_i | branch_valid_pipe[1]))};
             end
         end
 
@@ -45,9 +53,9 @@ module halt_ctrl(
 // Output
 //------------------------------------------------------------------------------
 
-    assign halt_decode_o    = 1'b0;//branch_en_i;
-    assign halt_exec_o      = 1'b0;//branch_en_i  | halt_pipe[0];
-    assign halt_mem_o       = 1'b0;//halt_pipe[0] | halt_pipe[1];
-    assign halt_reg_write_o = 1'b0;//halt_pipe[1] | halt_pipe[2];
+    assign halt_decode_o    = branch_en_d & ~(bp_target_valid_i | branch_valid_pipe[1]);
+    assign halt_exec_o      = (branch_en_d & ~(bp_target_valid_i | branch_valid_pipe[1])) | halt_pipe[0];
+    assign halt_mem_o       = halt_pipe[0] | halt_pipe[1];
+    assign halt_reg_write_o = halt_pipe[1] | halt_pipe[2];
 
 endmodule

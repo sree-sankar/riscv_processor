@@ -13,13 +13,16 @@
 
 module instr_fetch(
     // Input
-    input                 clk_i         , // System Clock
-    input                 clk_2x_i      , // 2x System Clock
-    input                 resetn_i      , // Synchronous Active Low System Reset
-    input  [`XLEN-1:0]    instr_i       , // Fetched Instruction
-    input  [`XLEN-1:0]    branch_addr_i , // Branch address
-    input                 branch_valid_i, // Branch address valid
-    input                 branch_taken_i, // Branch enable
+    input                 clk_i            , // System Clock
+    input                 clk_2x_i         , // 2x System Clock
+    input                 resetn_i         , // Synchronous Active Low System Reset
+    input  [`XLEN-1:0]    instr_i          , // Fetched Instruction
+    input  [`XLEN-1:0]    branch_addr_i    , // Branch address
+    input                 branch_valid_i   , // Branch address valid
+    input                 branch_taken_i   , // Branch enable
+    // Branch Perdictor
+    input  [`XLEN-1:0]    bp_target_addr_i ,
+    input                 bp_target_valid_i,
     // Output
     output [`XLEN-1:0]    pc_o          , // Program Counter
     output [`XLEN-1:0]    instr_o         // Intstruction to decode stage
@@ -45,6 +48,10 @@ module instr_fetch(
                 begin
                 pc_reg[0] <= pc_reg[1] + `PC_INC;
                 end
+            else if(bp_target_valid_i)
+                begin
+                pc_reg[0] <= bp_target_addr_i;
+                end
             else if(branch_valid_i)
                 begin
                 pc_reg[0] <= branch_addr_i;
@@ -68,7 +75,7 @@ module instr_fetch(
             end
         else
             begin
-            if(branch_valid_i)
+            if(branch_valid_i | bp_target_valid_i)
                 begin
                 pc_reg[1] <= pc_reg[0] + `PC_INC;
                 end

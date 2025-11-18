@@ -1,4 +1,4 @@
-`timescale 10ns / 1ps
+`timescale 1ns / 1ps
 //----------------------+-------------------------------------------------------
 // Filename             | uart_ctrl.sv
 // File created on      | 06/19/2022 18:26:12

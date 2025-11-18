@@ -55,8 +55,8 @@ module riscv(
     logic [          `XLEN-1:0]    decode_imm_b_data  ; // Decoded Immediate B type
     logic [          `XLEN-1:0]    decode_imm_u_data  ; // Decoded Immediate U type
     logic [          `XLEN-1:0]    decode_imm_j_data  ; // Decoded Immediate J type
-    logic [          `XLEN-1:0]    decode_branch_addr ;
-    logic                          decode_branch_valid;
+    logic [          `XLEN-1:0]    decode_branch_addr ; // Deocded Branch address
+    logic                          decode_branch_valid; // Deocded Branch address Validity
 
 //------------------------------------------------------------------------------
 // Execute Stage
@@ -103,6 +103,13 @@ module riscv(
     logic    halt_reg_write ; // Halt register write state
 
 //------------------------------------------------------------------------------
+// Branch Predition
+//------------------------------------------------------------------------------
+
+    logic [          `XLEN-1:0]    bp_target_addr ; // Branch Predictor Target address
+    logic                          bp_target_valid; // Branch Predictor Target address Validity
+
+//------------------------------------------------------------------------------
 // Instruction Fetch
 //------------------------------------------------------------------------------
 
@@ -113,6 +120,8 @@ module riscv(
         .branch_valid_i    (decode_branch_valid          ),
         .branch_addr_i     (decode_branch_addr           ),
         .branch_taken_i    (exec_branch_en               ),
+        .bp_target_addr_i  (bp_target_addr               ),
+        .bp_target_valid_i (bp_target_valid              ),
         .pc_o              (fetch_pc                     ),
         .instr_o           (fetch_instr                  )
     );
@@ -257,11 +266,29 @@ module riscv(
     halt_ctrl halt_ctrl_inst(
         .clk_i             (clk_i                        ),
         .resetn_i          (resetn_i                     ),
+        .branch_valid_i    (decode_branch_valid          ),
         .branch_en_i       (exec_branch_en               ),
+        .bp_target_valid_i (bp_target_valid              ),
         .halt_decode_o     (halt_decode                  ),
         .halt_exec_o       (halt_exec                    ),
         .halt_mem_o        (halt_mem                     ),
         .halt_reg_write_o  (halt_reg_write               )
+    );
+
+//------------------------------------------------------------------------------
+// Branch Predition Unit
+//------------------------------------------------------------------------------
+
+    branch_predictor branch_predictor_inst(
+        .clk_i                 (clk_i                       ),
+        .resetn_i              (resetn_i                    ),
+        .pc_i                  (fetch_pc                    ),
+        .branch_pc_i           (decode_pc                   ),
+        .branch_addr_i         (decode_branch_addr          ),
+        .branch_valid_i        (decode_branch_valid         ),
+        .branch_taken_i        (exec_branch_en              ),
+        .target_addr_o         (bp_target_addr              ),
+        .target_valid_o        (bp_target_valid             )
     );
 
 endmodule
